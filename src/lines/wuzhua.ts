@@ -1,0 +1,73 @@
+import { Bake } from '../acts/bake'
+import { Blanch } from '../acts/blanch'
+import { Bundle } from '../acts/bundle'
+import { Cut } from '../acts/cut'
+import { Fold } from '../acts/fold'
+import { Pick } from '../acts/pick'
+import { Sun } from '../acts/sun'
+import { Weigh } from '../acts/weigh'
+import { PHARMACOPOEIA, PHARMACOPOEIA_NOTE, PHARMACOPOEIA_SOURCE } from './qizhua'
+import type { LineDef } from './types'
+
+// 大五爪：和七爪同一套动画，割五刀、五瓣；润透以后先把每瓣的瓣尖往里折回约 3 毫米（07：五裂者把裂片先端向内折回约 3 mm），
+// 再整片对折、两边的瓣错开（用户给的成品照片：一扎十片都是对折的扇形，深灰外皮和白色内面一瓣一瓣交替），
+// 压平、再焙，十片一扎，红头绳从根上的结拉出几股、卡进瓣缝（照片上的捆法）。本子上是药典原句。
+
+const text = (k: string) => PHARMACOPOEIA.find((p) => p.key === k)!.text
+
+export const WUZHUA: LineDef = {
+  id: 'wuzhua',
+  name: '大五爪',
+  blurb: '割五瓣、刮白瓤、晒干，润透后瓣尖折回一点再对折压平，十片一扎。',
+  ready: true,
+  cast: { kind: 'peel', petals: 5 },
+  acts: (s) => [new Pick(s), new Weigh(s, 4.8), new Blanch(s), new Cut(s), new Sun(s), new Fold(s), new Bake(s), new Bundle(s)],
+  script: {
+    cover: { title: '大五爪', sub: '五瓣的橘红：瓣尖折回、对折压平', play: '开始' },
+    sentence: [
+      { key: 'p1', text: text('p1'), clear: ['pick', 12.5] },
+      { key: 'p2', text: text('p2'), clear: ['blanch', 16] },
+      { key: 'p3', text: text('p3'), clear: ['cut', 16] },
+      { key: 'p4', text: text('p4'), clear: ['cut', 36.5] },
+      { key: 'p5', text: text('p5'), clear: ['sun', 18.5] },
+      { key: 'p6', text: text('p6'), clear: ['fold', 29.5] },
+      { key: 'p7', text: text('p7'), clear: ['bake', 18] },
+    ],
+    source: PHARMACOPOEIA_SOURCE,
+    sourceNote: PHARMACOPOEIA_NOTE + '五裂的先把瓣尖向内折回约 3 毫米，再对折压平。',
+    quote: true,
+    chapters: [
+      { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: ['p1'] },
+      { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: ['p2'] },
+      { num: '三', title: '割皮去瓤', seal: '割', from: 'cut', phrases: ['p3', 'p4'] },
+      { num: '四', title: '晒干', seal: '晒', from: 'sun', phrases: ['p5'] },
+      { num: '五', title: '润、折、压', seal: '压', from: 'fold', phrases: ['p6'] },
+      { num: '六', title: '再焙', seal: '焙', from: 'bake', phrases: ['p7'] },
+      { num: '', title: '十片一扎', seal: '成', from: 'bundle', phrases: [], card: '十片一扎，红头绳捆好，叫大五爪。' },
+    ],
+    captions: [
+      ['pick', 8.6, 13.6, '青果还没熟，皮上一层细细的白绒。'],
+      ['weigh', 1.4, 4.4, '挑个大的，放上秤称一称。'],
+      ['weigh', 4.9, 8.2, '四两八。四两半以上的大果，才拿来割皮。'],
+      ['blanch', 2.5, 7.5, '水要滚透了才下锅。'],
+      ['blanch', 8.2, 12.0, '一篮十个，一起下锅。'],
+      ['blanch', 13.8, 18.6, '一烫就捞，颜色转亮了。'],
+      ['blanch', 21.4, 27, '摊在竹筛上放凉，沥干水。'],
+      ['cut', 4.5, 10, '这回只割五刀，底下留一截连着。'],
+      ['cut', 16.6, 20.8, '五瓣掰开，像开了一朵花。'],
+      ['cut', 21.4, 25.4, '果瓤整个掏出来。'],
+      ['cut', 26, 31.5, '白瓤刮掉，刮到见油眼就停。'],
+      ['cut', 41, 47, '十个都这样割好、刮好。'],
+      ['sun', 2.5, 8, '十片摊在竹匾上，天好就晒。'],
+      ['sun', 11, 17, '晒到颜色暗下来，边也卷起来。'],
+      ['fold', 2.4, 7.6, '干透的皮发脆，先洒水润透。'],
+      ['fold', 9.4, 11.6, '五瓣的先把瓣尖往里折回一点，'],
+      ['fold', 11.8, 15.6, '再整片对折，两边的瓣错开。'],
+      ['fold', 17.6, 22.6, '十片一起用木板压平。'],
+      ['bake', 2.4, 7.6, '火要细，隔着筛焙。'],
+      ['bake', 9.6, 14.6, '勤翻着，焙到干透就成了。'],
+      ['bundle', 6, 11.5, '十片一扎，红头绳顺着瓣缝捆好，这就是大五爪。'],
+    ],
+    ending: { title: '大五爪', seal: '成', replay: '再看一遍', more: '去展厅看看现在怎么做' },
+  },
+}
