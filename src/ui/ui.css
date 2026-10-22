@@ -120,12 +120,14 @@ body {
 }
 .choose .head {
   position: absolute;
-  left: 120px;
-  top: 104px;
-  width: 330px;
+  left: 170px;
+  top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: row-reverse;
-  gap: 30px;
+  align-items: flex-start;
+  gap: 40px;
+  padding-top: 128px;
   transition: opacity 0.45s ease;
 }
 .head .tcol {
@@ -150,24 +152,29 @@ body {
   margin-top: 150px;
   white-space: nowrap;
 }
-.choose .head .seal {
-  width: 46px;
-  height: 92px;
+/* 入口页的标题：大字一列，左边一列小字落款，款尾一方印 */
+.choose .head .t {
+  font-size: 108px;
+  letter-spacing: 0.18em;
+}
+.choose .head .kuan {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+  margin-top: 110px;
+}
+.choose .head .s {
+  margin-top: 0;
   font-size: 30px;
+  letter-spacing: 0.26em;
 }
-.choose .hint {
-  position: absolute;
-  left: 120px;
-  bottom: 74px;
-  font-family: 'HJ Hand', serif;
-  font-size: 24px;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-  opacity: 0.75;
-  transition: opacity 0.45s ease;
+.choose .head .seal {
+  width: 44px;
+  height: 84px;
+  font-size: 28px;
 }
-.choose.leaving .head,
-.choose.leaving .hint {
+.choose.leaving .head {
   opacity: 0;
 }
 
@@ -706,32 +713,34 @@ body {
   letter-spacing: 2px;
   color: var(--ink-soft);
 }
-/* 书口：鱼尾 + 书名 */
+/* 书口：书名用朱红，框成一张小题签 */
 .kou {
-  width: 42px;
+  width: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 64px;
+  padding-top: 34px;
   margin-right: 7px;
   border-right: 1px solid rgba(47, 36, 32, 0.6);
 }
-.kou .fish {
-  width: 30px;
-  height: 16px;
-}
-.kou .fish svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  fill: rgba(47, 36, 32, 0.86);
-}
 .kou .kt {
-  margin-top: 14px;
   writing-mode: vertical-rl;
-  font-size: 18px;
-  letter-spacing: 0.32em;
-  color: var(--ink);
+  padding: 12px 0 9px;
+  width: 32px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 21px;
+  line-height: 32px;
+  letter-spacing: 0.3em;
+  color: var(--red);
+  background: rgba(192, 65, 43, 0.06);
+  border: 1.2px solid rgba(192, 65, 43, 0.85);
+  box-shadow: inset 0 0 0 2.2px var(--page), inset 0 0 0 3.2px rgba(192, 65, 43, 0.55);
+}
+.endbook .kou .kt {
+  width: 34px;
+  font-size: 23px;
+  line-height: 34px;
 }
 .leaf .shade {
   position: absolute;

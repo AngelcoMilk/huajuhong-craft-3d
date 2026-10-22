@@ -267,9 +267,10 @@ export class UI {
     const c = el('div', 'choose')
     c.append(el('div', 'wash'))
     const head = el('div', 'head')
-    const tcol = el('div', 'tcol')
-    tcol.append(el('div', 't', '化州橘红'), seal('古法'))
-    head.append(tcol, el('div', 's', '同一个院子　四种古法做法'))
+    // 大字标题 + 左边一列落款（款尾盖印），像一幅字的题款
+    const kuan = el('div', 'kuan')
+    kuan.append(el('div', 's', '同一个院子，四种古法做法'), seal('古法'))
+    head.append(el('div', 't', '化州橘红'), kuan)
     c.append(head)
     const row = el('div', 'scrolls')
     cards.forEach(({ line, dur }, i) => {
@@ -315,7 +316,6 @@ export class UI {
       row.append(s)
     })
     c.append(row)
-    c.append(el('div', 'hint', '停一停，看一看；点一下，就开演'))
     return c
   }
 
@@ -398,7 +398,7 @@ export class UI {
     const leaf = el('div', 'leaf paper-tex')
     const frame = el('div', 'frame')
     const kou = el('div', 'kou')
-    kou.append(el('div', 'fish', '<svg viewBox="0 0 30 16"><path d="M0 0H30V15L15 6.5L0 15Z"/></svg>'), el('div', 'kt', story.name))
+    kou.append(el('div', 'kt', story.name))
     const cols = el('div', 'cols')
     const out: { e: HTMLElement; p: number; k: number; pu: boolean }[] = []
     story.sentence.forEach((ph, p) => {
