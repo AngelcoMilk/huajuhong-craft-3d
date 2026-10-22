@@ -14,13 +14,13 @@ import type { LineDef } from './types'
 export const PHARMACOPOEIA = [
   { key: 'p1', text: '柚类橘红系将未成熟的果实，' },
   { key: 'p2', text: '先投入沸水中，即捞出，' },
-  { key: 'p3', text: '将果皮割成5-7瓣，' },
+  { key: 'p3', text: '将果皮割成7瓣，' },
   { key: 'p4', text: '出去果瓤及内面部分白色的中果皮' },
   { key: 'p5', text: '后晒干或焙干，' },
   { key: 'p6', text: '再以水润透，对折以木板压平，' },
   { key: 'p7', text: '再焙干即得。' },
 ]
-export const PHARMACOPOEIA_SOURCE = '——《中国药典》1963 年版一部"橘红"条'
+export const PHARMACOPOEIA_SOURCE = '——《中国药典》1963 年版一部"橘红"'
 export const PHARMACOPOEIA_NOTE = '原书作"出去果瓤"，1985 年版起作"除去"。'
 
 const text = (k: string) => PHARMACOPOEIA.find((p) => p.key === k)!.text

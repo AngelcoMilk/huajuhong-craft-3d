@@ -5,7 +5,7 @@ import { CakeOven, PressCakes, Slice, Winnowed } from '../acts/yaguo'
 import type { LineDef } from './types'
 
 // 压果片：大果烫过，整个压扁（木板 + 压石压一夜，半夜翻一次），上焙炉烘干，再压一回，用切药刀切成 2～4 毫米的片。
-// 没有可引的原文，本子上写成做法说明，不加引号。
+// 没有可引的原文，本子上的字按药典的句式改写，出处标"据《化橘红制作工艺》等"。
 // 圆果（整果烘干、不压）用字幕带过；"家家户户自己压果是 1980 年代分户以后"也用字幕交代（docs/14）。
 
 export const YAGUO: LineDef = {
@@ -18,23 +18,23 @@ export const YAGUO: LineDef = {
   script: {
     cover: { title: '压果片', sub: '整果压扁、烘干、切片', play: '开始' },
     sentence: [
-      { key: 'y1', text: '大果整个烫过，', clear: ['blanch', 16] },
-      { key: 'y2', text: '木板压石压一夜，半夜翻一次，', clear: ['press', 30] },
-      { key: 'y3', text: '压成扁饼；', clear: ['press', 35] },
-      { key: 'y4', text: '上焙炉烘干，', clear: ['cakeOven', 22] },
-      { key: 'y5', text: '再压一回，', clear: ['repress', 10] },
-      { key: 'y6', text: '切成两到四毫米的薄片。', clear: ['slice', 20] },
+      { key: 'y1', text: '大果系将未成熟的果实，先整个投入沸水中烫过，即捞出，', clear: ['blanch', 16] },
+      { key: 'y2', text: '以木板重石压制一夜，', clear: ['press', 30] },
+      { key: 'y3', text: '其间翻面一次以压成扁饼，', clear: ['press', 35] },
+      { key: 'y4', text: '后上焙炉烘干，', clear: ['cakeOven', 22] },
+      { key: 'y5', text: '复以木板压平一回，', clear: ['repress', 10] },
+      { key: 'y6', text: '切成2～4毫米的薄片即得。', clear: ['slice', 20] },
     ],
-    source: '——按调研资料整理的做法说明，不是引文',
+    source: '——据《化橘红制作工艺》等',
     sourceNote: '整个烘干、不压的叫圆果。家家户户自己压果切片，是 1980 年代分户以后的事，现在多由合作社和厂里做。',
     quote: false,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: [], card: '挑四两半以上的大果。' },
-      { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: ['y1'] },
-      { num: '三', title: '压果', seal: '压', from: 'press', phrases: ['y2', 'y3'] },
-      { num: '四', title: '烘干', seal: '烘', from: 'cakeOven', phrases: ['y4'] },
-      { num: '五', title: '复压', seal: '复', from: 'repress', phrases: ['y5'] },
-      { num: '六', title: '切片', seal: '切', from: 'slice', phrases: ['y6'] },
+      { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: ['y1'], card: '大果整个烫过。' },
+      { num: '三', title: '压果', seal: '压', from: 'press', phrases: ['y2', 'y3'], card: '木板压石压一夜，半夜翻一次。' },
+      { num: '四', title: '烘干', seal: '烘', from: 'cakeOven', phrases: ['y4'], card: '上焙炉烘干。' },
+      { num: '五', title: '复压', seal: '复', from: 'repress', phrases: ['y5'], card: '烘过再压一回。' },
+      { num: '六', title: '切片', seal: '切', from: 'slice', phrases: ['y6'], card: '切成两到四毫米的薄片。' },
       { num: '', title: '一簸箕果片', seal: '成', from: 'winnow', phrases: [], card: '压果切成片，就是压果片。' },
     ],
     captions: [

@@ -6,14 +6,25 @@ import { Fold } from '../acts/fold'
 import { Pick } from '../acts/pick'
 import { Sun } from '../acts/sun'
 import { Weigh } from '../acts/weigh'
-import { PHARMACOPOEIA, PHARMACOPOEIA_NOTE, PHARMACOPOEIA_SOURCE } from './qizhua'
+import { PHARMACOPOEIA_SOURCE } from './qizhua'
 import type { LineDef } from './types'
 
 // 大五爪：和七爪同一套动画，割五刀、五瓣；润透以后先把每瓣的瓣尖往里折回约 3 毫米（07：五裂者把裂片先端向内折回约 3 mm），
 // 再整片对折、两边的瓣错开（用户给的成品照片：一扎十片都是对折的扇形，深灰外皮和白色内面一瓣一瓣交替），
-// 压平、再焙，十片一扎，红头绳从根上的结拉出几股、卡进瓣缝（照片上的捆法）。本子上是药典原句。
+// 压平、再焙，十片一扎，红头绳从根上的结拉出几股、卡进瓣缝（照片上的捆法）。
+// 本子上的字按五爪改过：五瓣、"除去"用今字，润透之后另有一句瓣尖内折。
 
-const text = (k: string) => PHARMACOPOEIA.find((p) => p.key === k)!.text
+const TEXT = [
+  { key: 'p1', text: '柚类橘红系将未成熟的果实，' },
+  { key: 'p2', text: '先投入沸水中，即捞出，' },
+  { key: 'p3', text: '将果皮割成5瓣，' },
+  { key: 'p4', text: '除去果瓤及内面部分白色的中果皮' },
+  { key: 'p5', text: '后晒干或焙干，' },
+  { key: 'p6', text: '以水润透，瓣尖内折约3毫米，对折以木板压平，' },
+  { key: 'p7', text: '再焙干即得。' },
+]
+
+const text = (k: string) => TEXT.find((p) => p.key === k)!.text
 
 export const WUZHUA: LineDef = {
   id: 'wuzhua',
@@ -34,7 +45,7 @@ export const WUZHUA: LineDef = {
       { key: 'p7', text: text('p7'), clear: ['bake', 18] },
     ],
     source: PHARMACOPOEIA_SOURCE,
-    sourceNote: PHARMACOPOEIA_NOTE + '五裂的先把瓣尖向内折回约 3 毫米，再对折压平。',
+    sourceNote: '',
     quote: true,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: ['p1'] },

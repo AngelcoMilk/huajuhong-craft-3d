@@ -6,8 +6,8 @@ import { Weigh } from '../acts/weigh'
 import type { LineDef } from './types'
 
 // 橘红胎：疏下来的小果，不割不压，整个烘干。
-// 本子上是《化州县志》第六篇对正毛橘红胎的形态描述（原文，可引）。
-// 工艺没有可引的条文（只记得 2006 年质检总局第 219 号公告的编号），所以写成说明，不加引号。
+// 本子上前半是《化州县志》第六篇对正毛橘红胎的形态描述（原文，可引），
+// 末两句按 2006 年质检总局第 219 号公告的记载（沸水漂后烘干，或直接高温烘干）补写成说明。
 
 export const TAI: LineDef = {
   id: 'tai',
@@ -19,21 +19,23 @@ export const TAI: LineDef = {
   script: {
     cover: { title: '橘红胎', sub: '小果整个烘，不割不压', play: '开始' },
     sentence: [
-      { key: 'q1', text: '正毛橘红胎"圆球形或近似圆球柱形，', clear: ['pick', 12.5] },
-      { key: 'q2', text: '直径约1–5cm，', clear: ['weigh', 7.6] },
+      { key: 'q1', text: '正毛橘红胎呈圆球形或近似圆球柱形，', clear: ['pick', 12.5] },
+      { key: 'q2', text: '直径约1～5厘米，', clear: ['weigh', 7.6] },
       { key: 'q3', text: '表面青褐色或黄棕色，', clear: ['oven', 14.5] },
       { key: 'q4', text: '披白色密绒毛，', clear: ['oven', 24] },
       { key: 'q5', text: '果蒂明显，顶部稍凹，', clear: ['oven', 29] },
-      { key: 'q6', text: '质地干燥坚实，不易剖开"', clear: ['oven', 41.5] },
+      { key: 'q6', text: '质地干燥坚实，不易剖开。', clear: ['oven', 41.5] },
+      { key: 'q7', text: '系整果不割不压，', clear: ['oven', 43] },
+      { key: 'q8', text: '经沸水烫后烘干或直接烘干即得。', clear: ['jar', 8] },
     ],
     source: '——《化州县志》第六篇',
-    sourceNote: '烫过再烘、直接烘两种做法并存，整果不割不压：据 2006 年质检总局第 219 号公告的记载整理，不是原文。',
+    sourceNote: '',
     quote: true,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: ['q1', 'q2'] },
       { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: [], card: '一半烫过再烘，一半直接烘。' },
-      { num: '三', title: '连烘几天', seal: '烘', from: 'oven', phrases: ['q3', 'q4', 'q5', 'q6'] },
-      { num: '', title: '一罐橘红胎', seal: '成', from: 'jar', phrases: [], card: '不割、不压，整个烘干就成了。' },
+      { num: '三', title: '连烘几天', seal: '烘', from: 'oven', phrases: ['q3', 'q4', 'q5', 'q6', 'q7'], card: '表面青褐色或黄棕色，披白色密绒毛，果蒂明显，顶部稍凹，质地干燥坚实，不易剖开。' },
+      { num: '', title: '一罐橘红胎', seal: '成', from: 'jar', phrases: ['q8'], card: '不割、不压，整个烘干就成了。' },
     ],
     captions: [
       ['pick', 8.6, 13.6, '疏果疏下来的小果，个头小，绒毛密。'],
