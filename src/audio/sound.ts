@@ -86,18 +86,38 @@ const SFX_FILES = { yard: 'yard-garden.mp3', fire: 'fire-hearth.mp3' } as const
  *          stove 2.5 ≈ −42 dBFS、oven 1.5 ≈ −46 dBFS（焙炉那段火是主角，比灶膛轻一档） */
 const SFX_GAIN = { yard: 0.62, stove: 2.5, oven: 1.5 } as const
 
-/** 一处声源：增益（远近）→ 左右 → 总线 */
+/** 各声源"刚好在跟前"的距离：Panner 的距离衰减与距离低通都以它为基准 */
+const SPOT_REF = { wok: 110, stove: 120, oven: 100, yard: 300, tree: 260 } as const
+
+/** 一处声源：定位（真 3D）→ 空气吸收（远了闷）→ 总线 */
 class Spot {
   readonly input: GainNode
-  private pan: StereoPannerNode
-  constructor(ctx: AudioContext, out: AudioNode) {
+  private readonly pan: PannerNode
+  private readonly lp: BiquadFilterNode
+  constructor(ctx: AudioContext, out: AudioNode, private readonly pos: Vector3, private readonly ref: number) {
     this.input = ctx.createGain()
-    this.pan = ctx.createStereoPanner()
-    this.input.connect(this.pan).connect(out)
+    this.pan = ctx.createPanner()
+    this.pan.panningModel = 'equalpower'
+    this.pan.distanceModel = 'inverse'
+    this.pan.refDistance = ref
+    this.pan.rolloffFactor = 0.9 // 与原来手算的 (ref/d)^0.85 基本一致
+    this.pan.maxDistance = 10000
+    this.pan.positionX.value = pos.x
+    this.pan.positionY.value = pos.y
+    this.pan.positionZ.value = pos.z
+    this.lp = ctx.createBiquadFilter()
+    this.lp.type = 'lowpass'
+    this.lp.Q.value = 0.5
+    this.lp.frequency.value = 18000
+    this.input.connect(this.pan)
+    this.pan.connect(this.lp)
+    this.lp.connect(out)
   }
-  set(g: number, pan: number, now: number) {
-    this.input.gain.setTargetAtTime(g, now, 0.12)
-    this.pan.pan.setTargetAtTime(pan, now, 0.12)
+  /** 每帧按"到镜头多远"把高频削掉：这是人判断远近的主要线索，比单纯变轻有效得多 */
+  tick(cam: Vector3, now: number) {
+    const d = cam.distanceTo(this.pos)
+    const f = clamp(1500 + 16500 * Math.pow(Math.min(1, this.ref / Math.max(d, 1)), 0.9), 900, 18000)
+    this.lp.frequency.setTargetAtTime(f, now, 0.25)
   }
 }
 
@@ -112,7 +132,6 @@ export class Sound {
   private crickets: { pan: StereoPannerNode; f: number; next: number; every: number; pulses: number }[] = []
   private next = { bird: 0, bubble: 0, crackle: 0, coal: 0 }
   private rnd = rng(2027)
-  private v = new Vector3()
   private live = false
   /** 底噪总闸与风/火系数（?audio=bed=,wind=,fire= 覆盖） */
   private readonly mix = readAudioMix()
@@ -173,13 +192,15 @@ export class Sound {
     this.bus.connect(soft).connect(comp).connect(this.master).connect(ctx.destination)
     this.amb = ctx.createGain()
     this.amb.connect(this.bus)
-    this.spots = {
-      wok: new Spot(ctx, this.amb),
-      stove: new Spot(ctx, this.amb),
-      oven: new Spot(ctx, this.amb),
-      yard: new Spot(ctx, this.amb),
-      tree: new Spot(ctx, this.amb),
-    }
+    // 院子的一点堂响：卷积混响，脉冲响应由代码合成（不用素材文件）
+    const wet = ctx.createGain()
+    wet.gain.value = 0.1
+    const conv = ctx.createConvolver()
+    conv.buffer = this.impulse(ctx, 0.85)
+    this.bus.connect(conv).connect(wet).connect(this.master)
+    const spots = {} as Record<keyof typeof SPOT, Spot>
+    for (const k of Object.keys(SPOT) as (keyof typeof SPOT)[]) spots[k] = new Spot(ctx, this.amb, SPOT[k], SPOT_REF[k])
+    this.spots = spots
     this.beds = {
       // 低频一律先切掉 60～80Hz 以下：这段听不见，但会让喇叭一直"嗡"，最容易被当成"底噪大"
       air: bed(ctx, this.amb, [['highpass', 80, 0.7], ['lowpass', 260, 0.5]]),
@@ -259,31 +280,76 @@ export class Sound {
     return g
   }
 
-  /** 放一个动作的声音 */
+  /** 放一个动作的声音：带 at 的交给人声定位，太远的不发（省节点） */
   private fire(c: Cue, when: number, cam: PerspectiveCamera) {
     const ctx = this.ctx!
     let out: AudioNode = this.bus
-    let g = c.gain
+    const g = c.gain
     if (c.at) {
-      const { gain, pan } = this.place(c.at, cam, 95)
-      g *= gain
-      if (g < 0.01) return
-      const p = ctx.createStereoPanner()
-      p.pan.value = pan
+      const ref = 95
+      const d = c.at.distanceTo(cam.position)
+      // 和原来一样的门槛：远到听不见就不建节点
+      if (g * Math.pow(Math.min(1, ref / Math.max(d, 1)), 0.85) < 0.01) return
+      const p = ctx.createPanner()
+      p.panningModel = 'equalpower'
+      p.distanceModel = 'inverse'
+      p.refDistance = ref
+      p.rolloffFactor = 0.9
+      p.maxDistance = 10000
+      p.positionX.value = c.at.x
+      p.positionY.value = c.at.y
+      p.positionZ.value = c.at.z
       p.connect(this.bus)
       out = p
     }
     VOICES[c.name](ctx, out, when, { gain: g, pitch: c.pitch, dur: c.dur, rnd: rng(c.seed) })
   }
 
-  /** 离镜头多远、在画面哪边：远了小一点，偏左偏右往那边放一点 */
-  private place(at: Vector3, cam: PerspectiveCamera, ref: number) {
-    const p = this.v.copy(at).applyMatrix4(cam.matrixWorldInverse)
-    const d = p.length()
-    const gain = Math.pow(Math.min(1, ref / Math.max(d, 1)), 0.85)
-    const half = Math.tan((cam.fov * Math.PI) / 360) * Math.max(Math.abs(p.z), 1) * cam.aspect
-    const pan = clamp(p.x / half, -1, 1) * 0.55
-    return { gain, pan }
+  /** 听者摆到相机上：位置 + 朝向 + 上方向，逐帧跟 */
+  private syncListener(cam: PerspectiveCamera, now: number) {
+    const L = this.ctx!.listener
+    const p = cam.position
+    const e = cam.matrixWorld.elements
+    const px = L.positionX as AudioParam | undefined
+    const set = (a: AudioParam, v: number) => a.setTargetAtTime(v, now, 0.02)
+    if (px) {
+      set(px, p.x)
+      set(L.positionY, p.y)
+      set(L.positionZ, p.z)
+      set(L.forwardX, -e[8])
+      set(L.forwardY, -e[9])
+      set(L.forwardZ, -e[10])
+      set(L.upX, e[4])
+      set(L.upY, e[5])
+      set(L.upZ, e[6])
+    } else {
+      // 老浏览器：已废弃的整组接口
+      L.setPosition(p.x, p.y, p.z)
+      L.setOrientation(-e[8], -e[9], -e[10], e[4], e[5], e[6])
+    }
+  }
+
+  /** 程序合成一小段脉冲响应：12ms 预延迟 + 指数衰减的噪声，尾巴越来越闷 */
+  private impulse(ctx: AudioContext, sec: number) {
+    const sr = ctx.sampleRate
+    const len = Math.max(1, Math.floor(sr * sec))
+    const buf = ctx.createBuffer(2, len, sr)
+    const pre = Math.floor(sr * 0.012)
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch)
+      const r = rng(4471 + ch * 977)
+      let lp = 0
+      for (let i = 0; i < len; i++) {
+        if (i < pre) {
+          d[i] = 0
+          continue
+        }
+        const k = (i - pre) / (len - pre)
+        lp += (r() * 2 - 1 - lp) * 0.3
+        d[i] = lp * Math.pow(1 - k, 2.6)
+      }
+    }
+    return buf
   }
 
   /**
@@ -344,16 +410,14 @@ export class Sound {
       this.sfxStove?.gain.setTargetAtTime(SFX_GAIN.stove * a.fire * this.mix.sfx * this.mix.hearth, now, 0.4)
       this.sfxOven?.gain.setTargetAtTime(SFX_GAIN.oven * a.oven * this.mix.sfx * this.mix.hearth, now, 0.7)
     }
-    const place = (k: keyof typeof SPOT, ref: number) => {
-      const { gain, pan } = this.place(SPOT[k], cam, ref)
-      this.spots[k].set(gain, pan, now)
-      return gain
-    }
-    const gWok = place('wok', 110)
-    const gStove = place('stove', 120)
-    const gOven = place('oven', 100)
-    place('yard', 300)
-    place('tree', 260)
+    // 听者跟相机走；各声源按"离镜头多远"削高频。gWok 这几个只用来判断"够近才发随机音"
+    this.syncListener(cam, now)
+    for (const k of Object.keys(SPOT) as (keyof typeof SPOT)[]) this.spots[k].tick(cam.position, now)
+    const near = (k: keyof typeof SPOT) =>
+      Math.pow(Math.min(1, SPOT_REF[k] / Math.max(cam.position.distanceTo(SPOT[k]), 1)), 0.85)
+    const gWok = near('wok')
+    const gStove = near('stove')
+    const gOven = near('oven')
 
     // 一个个放的：水泡、噼啪、鸟、蛐蛐（往前排 0.15 秒）
     const AHEAD = now + 0.15
