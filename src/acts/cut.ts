@@ -13,6 +13,9 @@ import { Act } from './act'
 
 const v = (x: number, y: number, z: number) => new Vector3(x, y, z)
 const AC = PEEL.ALPHA_C
+/** 刮下来的屑：落地后搁这么久（秒）还看得见，再用这么久化没 —— 按每片自己的年龄算 */
+const SHAVING_HOLD = 1.6
+const SHAVING_FADE = 2.4
 
 export class Cut extends Act {
   /** 割皮时，第 k 道口转到刀这一边：刀固定在 phiK 方位 */
@@ -252,7 +255,7 @@ export class Cut extends Act {
     pulp.visible = t > 12
     pulp.rotation.set(0, pt * 2, pt * 0.6)
 
-    // 刮下来的白瓤屑：从铲口那里拨出去，落在旁边两瓣之间的空当里（落在砧板上，不压在瓣上）
+    // 刮下来的白瓤屑：从铲口那里拨出去，落在旁边两瓣之间的空当里（落在砧板上，不压在瓣上），搁一会儿再慢慢化掉
     if (t > this.scrapeStart(0)) {
       const sh = w.shavings
       const AC0 = AC
@@ -270,6 +273,9 @@ export class Cut extends Act {
           const ts = s0 + ((j + 0.5) / 4) * 1.25
           const age = t - ts
           if (age < 0) continue
+          // 落地搁一会儿再慢慢化掉；化完的就不再提交，省得留一个看不见却还在的空壳
+          const fade = 1 - smoothstep(SHAVING_HOLD, SHAVING_HOLD + SHAVING_FADE, age)
+          if (fade <= 0.002) continue
           const f = (j + 0.5) / 4
           hero.innerCenter(k, lerp(AC0 * 0.9, Math.PI * 0.92, f), startP)
           startP.y += 0.2
@@ -280,7 +286,7 @@ export class Cut extends Act {
           lp.set(lerp(startP.x, Math.cos(gap) * rho, m), lerp(startP.y, 0.32, m) + Math.sin(Math.PI * m) * 1.2, lerp(startP.z, Math.sin(gap) * rho, m))
           lp.applyMatrix4(mScrape)
           // 落下来就顺着空当躺着：只在水平面里转，不立起来
-          sh.add(lp, (hash1(j + k * 9) - 0.5) * 0.3, yawS - gap + (hash1(k + j) - 0.5) * 0.5, (hash1(j * 3 + k) - 0.5) * 0.3, 0.75 + 0.4 * hash1(k * 31 + j))
+          sh.add(lp, (hash1(j + k * 9) - 0.5) * 0.3, yawS - gap + (hash1(k + j) - 0.5) * 0.5, (hash1(j * 3 + k) - 0.5) * 0.3, 0.75 + 0.4 * hash1(k * 31 + j), fade)
         }
       }
     }

@@ -104,16 +104,20 @@ export class World {
     s.add(this.bundle.group)
 
     s.add(this.drops.mesh)
-    // 刮下来的白瓤屑：卷起来的小薄片
+    // 刮下来的白瓤屑：卷起来的小薄片；每片按 aFade 慢慢化掉（见 Scatter）
     const curl = new CylinderGeometry(0.3, 0.3, 1.3, 10, 1, true, 0, Math.PI * 1.2)
     curl.rotateZ(Math.PI / 2)
     this.shavings = new Scatter(
       curl,
       procStandard(
-        { roughness: 0.9, metalness: 0, side: 2 },
+        { roughness: 0.9, metalness: 0, side: 2, transparent: true },
         {
           uniforms: { uPith: { value: new Color(FRUIT.pith[1]) } },
-          color: /* glsl */ `diffuseColor.rgb = uPith * (0.9 + 0.12 * snoise(vPos * 3.0));`,
+          attributes: 'attribute float aFade;',
+          varyings: 'varying float vFade;',
+          vertex: 'vFade = aFade;',
+          color: /* glsl */ `diffuseColor.rgb = uPith * (0.9 + 0.12 * snoise(vPos * 3.0));
+            diffuseColor.a *= vFade;`,
         },
       ),
       90,

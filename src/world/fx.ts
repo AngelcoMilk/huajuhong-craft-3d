@@ -292,6 +292,8 @@ export class Drops {
 /** 一组可摆放的实例（刨下来的瓤屑等） */
 export class Scatter {
   readonly mesh: InstancedMesh
+  /** 每一片自己的"实在程度"：材质里当 alpha 乘进去（1 是实的，0 是化没了） */
+  private fade: InstancedBufferAttribute
   private dummy = new Object3D()
   private n = 0
   constructor(geo: BufferGeometry, mat: Material, count: number) {
@@ -301,22 +303,28 @@ export class Scatter {
     this.mesh.receiveShadow = true
     this.mesh.frustumCulled = false
     this.mesh.count = 0
+    const have = geo.getAttribute('aFade') as InstancedBufferAttribute | undefined
+    this.fade = have ?? new InstancedBufferAttribute(new Float32Array(count), 1)
+    if (!have) geo.setAttribute('aFade', this.fade)
   }
   begin() {
     this.n = 0
   }
-  add(p: Vector3, rx: number, ry: number, rz: number, s: number) {
+  /** fade：这一片此刻多实在，不传就是实的 */
+  add(p: Vector3, rx: number, ry: number, rz: number, s: number, fade = 1) {
     if (this.n >= this.mesh.instanceMatrix.count) return
     const d = this.dummy
     d.position.copy(p)
     d.rotation.set(rx, ry, rz)
     d.scale.setScalar(s)
     d.updateMatrix()
+    this.fade.setX(this.n, fade)
     this.mesh.setMatrixAt(this.n++, d.matrix)
   }
   end() {
     this.mesh.count = this.n
     this.mesh.instanceMatrix.needsUpdate = true
+    this.fade.needsUpdate = true
     this.mesh.visible = this.n > 0
   }
 }
