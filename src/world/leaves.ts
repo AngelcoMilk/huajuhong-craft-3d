@@ -25,8 +25,8 @@ const UP = new Vector3(0, 1, 0)
 /** 从篮子里滑出去、到淡完消失（相对烫果段开头，秒） */
 const RELEASE0 = 8.65
 const RELEASE_SPAN = 0.4
-const FADE_IN = 1.3 // 离开后多久开始淡
-const FADE_LEN = 2.0 // 淡多久
+const FADE_IN = 0.85 // 离开后多久开始淡
+const FADE_LEN = 1.5 // 淡多久（合计约 2.35 秒收完，正好还在锅沿上方）
 
 function leafGeometry(seed: number) {
   const len = L * (0.9 + 0.2 * hash1(seed))
@@ -128,15 +128,18 @@ export class BasketLeaves {
     const slots = stage.layout.basket
     const radius = (i: number) => stage.layout.lift(i)
     // 果堆最高的那几个果子，叶子往它们身上搁
-    const tops = slots
+    // 只挑"靠中间、又顶得高"的果子：叶子横着出去最多 9.5cm，篮口半径 18，
+    // 顶果离轴超过 5.6 就有叶尖捅出篮口的风险（小果线尤其）
+    const order = slots
       .map((_, i) => i)
       .sort((a, b) => slots[b].y + radius(b) - (slots[a].y + radius(a)))
-      .slice(0, COUNT)
+    const near = order.filter((i) => Math.hypot(slots[i].x, slots[i].z) <= 5.6)
+    const tops = (near.length >= COUNT ? near : order).slice(0, COUNT)
     for (let k = 0; k < COUNT; k++) {
       const seed = 11 + k * 23
       const geo = leafGeometry(seed)
       const base = slots[tops[k % tops.length]]
-      const off = 0.8 + 1.1 * hash1(seed + 3)
+      const off = 0.6 + 0.8 * hash1(seed + 3)
       const ang = hash1(seed + 7) * Math.PI * 2
       const lx = base.x + Math.cos(ang) * off
       const lz = base.z + Math.sin(ang) * off
@@ -184,10 +187,11 @@ export class BasketLeaves {
       const dt = bt - lf.release
       const out = 9 + 4 * hash1(lf.phase * 40)
       const sway = Math.sin(dt * 2.3 + lf.phase)
+      // 倒出去的方向略偏镜头这一侧：别整片掉进锅上那柱蒸汽里被洗掉
       lf.mesh.position.set(
-        lf.spawn.x - out * dt + sway * dt * 0.9,
+        lf.spawn.x - out * 0.55 * dt + sway * dt * 0.9,
         lf.spawn.y - lf.fall * dt,
-        lf.spawn.z + Math.cos(dt * 1.8 + lf.phase) * 1.5 * dt,
+        lf.spawn.z + out * 0.85 * dt + Math.cos(dt * 1.8 + lf.phase) * 1.5 * dt,
       )
       this.e.set(dt * 1.3 + lf.phase, dt * 1.1, dt * 0.8 + lf.phase)
       lf.mesh.quaternion.setFromEuler(this.e)
