@@ -125,7 +125,7 @@ export class Blanch extends Act {
   }
 
   /** 篮子：放在灶前地上，拎起来往锅里倒，再放回地上 */
-  private basketPose(t: number, outP: Vector3, outQ: Quaternion) {
+  basketPose(t: number, outP: Vector3, outQ: Quaternion) {
     const L = LAYOUT
     const P1 = v(L.wok.x + 16, 112, L.wok.z + 6)
     if (t < LIFT_AT) outP.copy(BASKET_FLOOR)

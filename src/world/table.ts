@@ -419,32 +419,7 @@ export class Table {
     // 篮里的十个果由 Batch 摆（主角是 BASKET_SLOTS[0]）
     const hs = BASKET_SLOTS[0]
     this.heroSlot.set(this.basket.position.x + hs.x, this.basket.position.y + hs.y, this.basket.position.z + hs.z)
-    // 几片柚子叶：搭在篮沿上，压在没放果的凹处
-    const leafShape = new Shape()
-    leafShape.moveTo(0, 0)
-    leafShape.quadraticCurveTo(2.6, 3, 0, 8.5)
-    leafShape.quadraticCurveTo(-2.6, 3, 0, 0)
-    const leafGeo = new ExtrudeGeometry(leafShape, { depth: 0.05, bevelEnabled: false, curveSegments: 8 })
-    const leafMat = procPhysical(
-      { roughness: 0.38, metalness: 0, clearcoat: 0.4, side: 2 },
-      {
-        uniforms: { uLeaf: { value: new Color(P.leaf) } },
-        color: /* glsl */ `
-          float mid = 1.0 - smoothstep(0.0, 0.18, abs(vPos.x));
-          float vein = smoothstep(0.9, 1.0, abs(sin((vPos.y - abs(vPos.x) * 1.2) * 2.4))) * 0.4;
-          diffuseColor.rgb = uLeaf * (0.95 + 0.35 * mid + 0.15 * vein);
-        `,
-      },
-    )
-    for (const deg of [0, 120, 240]) {
-      const a = (deg * Math.PI) / 180
-      const lf = mesh(leafGeo, leafMat)
-      // 叶柄朝里、叶尖探出篮沿，斜搭着
-      lf.position.set(Math.cos(a) * 6.5, 10.6, Math.sin(a) * 6.5)
-      lf.rotation.set(0, -Math.PI / 2 - a, 0, 'YXZ')
-      lf.rotateX(-1.25)
-      this.basket.add(lf)
-    }
+    // 篮子本身不带叶子：案面上散落的柚子叶是另外一摊（见 leaves.ts），不跟篮子走
 
     // 结尾放成品的竹盘
     this.tray = roundSieve(15, 2.6, { w: 1.1 })

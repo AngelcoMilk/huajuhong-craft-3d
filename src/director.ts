@@ -1,7 +1,7 @@
 import { Color, Euler, PerspectiveCamera, Vector2, Vector3, type Vector4 } from 'three'
 import type { Act } from './acts/act'
 import { collectCues, type Ambience, type Cue } from './audio/sound'
-import { STRAINER_REST_YAW } from './acts/blanch'
+import { Blanch, STRAINER_REST_YAW } from './acts/blanch'
 import { newCam, ShotList } from './camera'
 import { cloneLight, LIGHTS, mixLight, type LightName, type LightState } from './gfx/env'
 import type { PostParams } from './gfx/post'
@@ -49,6 +49,8 @@ export class Director {
   readonly frame: Frame
   /** 整条线上的动作声音 */
   readonly cues: Cue[]
+  /** 烫果那一段（篮子在它里面倒果，叶子要在这时飘出去） */
+  private readonly blanch?: Blanch
 
   constructor(
     private w: World,
@@ -67,6 +69,9 @@ export class Director {
       a.shots(this.shotList.adder(a.start))
       for (const [k, name] of a.lights()) this.lightKeys.push([a.start + k, name])
     }
+    this.blanch = this.acts.find((a) => a instanceof Blanch)
+    // 篮子里的叶子：按这条线的果堆摆一次
+    this.w.leaves.build(this.stage)
     // 章节之间翻一页纸、标题卡上盖印；结尾那一页翻出来
     this.cues = collectCues(this.acts, (add) => {
       this.story.chapters.forEach((c, i) => {
@@ -207,6 +212,8 @@ export class Director {
     w.shavings.end()
     w.table.basket.position.copy(s.basketPos)
     w.table.basket.quaternion.copy(s.basketQuat)
+    // 篮里的叶子：跟着篮子，倒果那一下脱开、飘落、淡出
+    w.leaves.update(T, w.table.basket, this.blanch)
 
     // 4. 一直在的东西
     const c = s.carry

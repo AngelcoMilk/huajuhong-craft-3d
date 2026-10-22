@@ -8,6 +8,7 @@ import { Cutter, Winnow } from './cutter'
 import { Bundle } from './bundle'
 import { Drops, Motes, Puffs, Scatter } from './fx'
 import { LAYOUT } from './layout'
+import { BasketLeaves } from './leaves'
 import { Peel, PeelState } from './peel'
 import { Props } from './props'
 import { DryingRack, Oven } from './stations'
@@ -34,6 +35,8 @@ export class World {
   readonly yard = new Yard()
   readonly stove = new Stove()
   readonly table = new Table()
+  /** 案面上散落的柚子叶（不跟篮子走） */
+  readonly leaves = new BasketLeaves()
   readonly oven = new Oven()
   readonly tree = new Tree()
   readonly props = new Props()
@@ -68,7 +71,7 @@ export class World {
     this.env = new Environment(renderer, s)
     const petals = cast.petals ?? 7
     this.hero = new Peel(undefined, petals)
-    s.add(this.yard.group, this.stove.group, this.table.group, this.oven.group, this.tree.group, this.props.group)
+    s.add(this.yard.group, this.stove.group, this.table.group, this.leaves.group, this.oven.group, this.tree.group, this.props.group)
     s.add(this.hero.group)
     this.steelyard.group.position.copy(LAYOUT.steelyard)
     s.add(this.steelyard.group)
