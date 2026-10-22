@@ -20,6 +20,17 @@ import { lerp, lerpColor } from '../util'
 
 // 天空、太阳、天光、雾和环境反射。一天里的光用几套预设插值，晒的那一章太阳会走一整圈。
 
+// 填充光（天光 + 环境反射）的系数。压下去，直射阳光就明确了：亮面亮、暗面真的暗，
+// 影子也有形状。?fill=1.3 可以回到原来那种平一点的光，?fill=0.8 更硬。
+const FILL = (() => {
+  try {
+    const v = Number(new URLSearchParams(location.search).get('fill'))
+    return Number.isFinite(v) && v > 0 ? Math.min(2, v) : 1
+  } catch {
+    return 1
+  }
+})()
+
 export interface LightState {
   sun: Vector3 // 指向太阳
   sunColor: Color
@@ -299,7 +310,8 @@ export class Environment {
     const sun = this.sun
     sun.color.copy(s.sunColor)
     // 太阳贴近地平线时光变弱
-    sun.intensity = s.sunI * Math.min(1, Math.max(0, s.sun.y + 0.04) * 6)
+    // 太阳提一档：亮面更亮，配上压低的填充光，明暗才拉得开——只压填充光只会整体变暗
+    sun.intensity = s.sunI * 1.32 * Math.min(1, Math.max(0, s.sun.y + 0.04) * 6)
     // 阴影相机：中心按纹素对齐，减少挪动时影子边缘闪
     const r = this.shadowRadius
     const cam = sun.shadow.camera
@@ -327,7 +339,7 @@ export class Environment {
 
     this.hemi.color.copy(s.hemiSky)
     this.hemi.groundColor.copy(s.hemiGround)
-    this.hemi.intensity = s.hemiI * 0.85
+    this.hemi.intensity = s.hemiI * 0.7 * FILL
 
     const fog = this.scene.fog as FogExp2
     fog.color.copy(s.fog)
@@ -343,6 +355,6 @@ export class Environment {
       this.scene.environment = this.envRT.texture
       prev?.dispose()
     }
-    this.scene.environmentIntensity = s.envI * 0.9
+    this.scene.environmentIntensity = s.envI * 0.78 * FILL
   }
 }

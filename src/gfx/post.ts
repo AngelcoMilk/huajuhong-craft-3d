@@ -3,6 +3,7 @@ import {
   DepthTexture,
   HalfFloatType,
   LinearFilter,
+  Matrix4,
   PerspectiveCamera,
   ShaderMaterial,
   UnsignedIntType,
@@ -178,12 +179,14 @@ const finalMat = new ShaderMaterial({
     tDepth: { value: null },
     tBlur: { value: null },
     tBloom: { value: null },
+    tAO: { value: null },
     uNear: { value: 1 },
     uFar: { value: 1000 },
     uFocus: { value: 100 },
     uAperture: { value: 0.5 },
     uMaxCoc: { value: 10 },
     uBloom: { value: 0.25 },
+    uAO: { value: 0.85 },
     uExposure: { value: 1 },
     uTime: { value: 0 },
     uRes: { value: new Vector2() },
@@ -200,8 +203,8 @@ const finalMat = new ShaderMaterial({
   },
   vertexShader: VERT,
   fragmentShader: /* glsl */ `
-    uniform sampler2D tColor, tDepth, tBlur, tBloom;
-    uniform float uFocus, uAperture, uMaxCoc, uBloom, uExposure, uTime, uLift, uVignette, uGrain, uSat, uFade;
+    uniform sampler2D tColor, tDepth, tBlur, tBloom, tAO;
+    uniform float uFocus, uAperture, uMaxCoc, uBloom, uExposure, uTime, uLift, uVignette, uGrain, uSat, uFade, uAO;
     uniform vec2 uRes, uHazeR;
     uniform vec3 uShadowTint, uWarm, uHaze, uFadeColor;
     varying vec2 vUv;
@@ -263,6 +266,9 @@ const finalMat = new ShaderMaterial({
         sharp = max(sharp + clamp(edge, -0.04, 0.04) * 0.25 * (1.0 - t), 0.0);
       }
       vec3 c = mix(sharp, blur.rgb, t);
+      // 环境光遮蔽：角落、接缝、贴桌面的地方压暗；景深糊掉的地方淡出（免得糊块里有暗斑）
+      float ao = texture2D(tAO, uv).r;
+      c *= mix(1.0, ao, uAO * (1.0 - t * 0.75));
       c += texture2D(tBloom, uv).rgb * uBloom;
       c = agx(c * uExposure);
       c = toSRGB(c);
@@ -290,6 +296,88 @@ const finalMat = new ShaderMaterial({
   depthWrite: false,
 })
 
+
+/**
+ * 屏幕空间环境光遮蔽：把角落、接缝、贴着桌面的地方压暗。
+ * 只用深度图，不需要额外渲染一遍几何；半分辨率算，够用。
+ */
+const SSAO_MAT = new ShaderMaterial({
+  uniforms: {
+    tDepth: { value: null },
+    uProj: { value: new Matrix4() },
+    uProjInv: { value: new Matrix4() },
+    uTexel: { value: new Vector2() },
+    uRes: { value: new Vector2() },
+    uRadius: { value: 34 },
+    uNear: { value: 1 },
+    uFar: { value: 1000 },
+  },
+  vertexShader: VERT,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDepth;
+    uniform mat4 uProjInv;
+    uniform vec2 uTexel, uRes;
+    uniform float uRadius;
+    varying vec2 vUv;
+    ${DEPTH_FN}
+
+    /** 由深度反投影到相机空间 */
+    vec3 viewPos(vec2 uv) {
+      float d = texture2D(tDepth, uv).x;
+      vec4 c = vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);
+      vec4 v = uProjInv * c;
+      return v.xyz / v.w;
+    }
+    float hash12(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
+
+    void main() {
+      float d = texture2D(tDepth, vUv).x;
+      // 天空不做
+      if (d >= 0.9999) { gl_FragColor = vec4(1.0); return; }
+      vec3 p = viewPos(vUv);
+      // 八个方向、两圈半径：看周围有没有比本点更靠近相机的几何挡着它。
+      // 方向用三角函数现算而不是查表——GLSL1 不允许拿循环变量去索引 uniform 数组。
+      float rot = hash12(floor(vUv * uRes)) * 6.2831853;
+      float occ = 0.0;
+      float tot = 0.0;
+      for (int i = 0; i < 8; i++) {
+        float a = float(i) * 0.785398 + rot;
+        for (int k = 1; k <= 2; k++) {
+          vec2 o = vec2(cos(a), sin(a)) * uTexel * (float(k) * 6.0);
+          float dz = p.z - viewPos(vUv + o).z;
+          float w = 1.0 - (float(k) - 1.0) * 0.45;
+          occ += smoothstep(0.0, uRadius, dz) * w;
+          tot += w;
+        }
+      }
+      float ao = 1.0 - clamp(occ / tot, 0.0, 1.0) * 1.5;
+      gl_FragColor = vec4(vec3(clamp(ao, 0.0, 1.0)), 1.0);
+    }
+  `,
+  depthTest: false,
+  depthWrite: false,
+})
+
+/** 把 SSAO 的噪点糊掉（半分辨率上 3x3 就够） */
+const AO_BLUR_MAT = new ShaderMaterial({
+  uniforms: { tAO: { value: null }, uTexel: { value: new Vector2() } },
+  vertexShader: VERT,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tAO;
+    uniform vec2 uTexel;
+    varying vec2 vUv;
+    void main() {
+      float s = 0.0;
+      for (int y = -1; y <= 1; y++)
+        for (int x = -1; x <= 1; x++)
+          s += texture2D(tAO, vUv + vec2(float(x), float(y)) * uTexel).r;
+      gl_FragColor = vec4(vec3(s / 9.0), 1.0);
+    }
+  `,
+  depthTest: false,
+  depthWrite: false,
+})
+
 export interface PostParams {
   focus: number
   aperture: number
@@ -310,8 +398,12 @@ export interface PostParams {
 
 export class Post {
   readonly scene: WebGLRenderTarget
+  /** 环境光遮蔽强度：0 关掉，1 是常规 */
+  aoStrength = 0.85
   private coc: WebGLRenderTarget
   private blur: WebGLRenderTarget
+  private ssao: WebGLRenderTarget
+  private ssaoBlur: WebGLRenderTarget
   private down: WebGLRenderTarget[] = []
   private up: WebGLRenderTarget[] = []
   private quad = new FullScreenQuad()
@@ -324,6 +416,8 @@ export class Post {
     const opt = { type: HalfFloatType, minFilter: LinearFilter, magFilter: LinearFilter, depthBuffer: false }
     this.coc = new WebGLRenderTarget(1, 1, opt)
     this.blur = new WebGLRenderTarget(1, 1, opt)
+    this.ssao = new WebGLRenderTarget(1, 1, opt)
+    this.ssaoBlur = new WebGLRenderTarget(1, 1, opt)
     for (let i = 0; i < this.levels; i++) {
       this.down.push(new WebGLRenderTarget(1, 1, opt))
       this.up.push(new WebGLRenderTarget(1, 1, opt))
@@ -340,6 +434,8 @@ export class Post {
     const hh = Math.ceil(h / 2)
     this.coc.setSize(hw, hh)
     this.blur.setSize(hw, hh)
+    this.ssao.setSize(hw, hh)
+    this.ssaoBlur.setSize(hw, hh)
     let lw = hw
     let lh = hh
     for (let i = 0; i < this.levels; i++) {
@@ -369,6 +465,22 @@ export class Post {
     const far = camera.far
     // 弥散圆按半分辨率像素算，跟着画面高度缩放，换分辨率时景深观感不变
     const maxCoc = p.maxCoc * (hh / 540)
+
+    // 环境光遮蔽（半分辨率）：先用深度算，再糊一下去噪
+    const aw = this.ssao.width
+    const ah = this.ssao.height
+    const su = SSAO_MAT.uniforms
+    su.tDepth.value = this.scene.depthTexture
+    su.uProj.value.copy(camera.projectionMatrix)
+    su.uProjInv.value.copy(camera.projectionMatrixInverse)
+    su.uTexel.value.set(1 / aw, 1 / ah)
+    su.uRes.value.set(aw, ah)
+    su.uNear.value = near
+    su.uFar.value = far
+    this.pass(SSAO_MAT, this.ssao)
+    AO_BLUR_MAT.uniforms.tAO.value = this.ssao.texture
+    AO_BLUR_MAT.uniforms.uTexel.value.set(1 / aw, 1 / ah)
+    this.pass(AO_BLUR_MAT, this.ssaoBlur)
 
     const cu = cocMat.uniforms
     cu.tColor.value = this.scene.texture
@@ -416,6 +528,8 @@ export class Post {
     fu.uAperture.value = p.aperture
     fu.uMaxCoc.value = maxCoc * 2
     fu.uBloom.value = p.bloom
+    fu.tAO.value = this.ssaoBlur.texture
+    fu.uAO.value = this.aoStrength
     fu.uExposure.value = p.exposure
     fu.uTime.value = time
     fu.uRes.value.set(w, h)

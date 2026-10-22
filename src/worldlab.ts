@@ -1,4 +1,4 @@
-import { Color, PCFShadowMap, PerspectiveCamera, Vector2, Vector3, WebGLRenderer } from 'three'
+import { Color, PCFSoftShadowMap, PerspectiveCamera, Vector2, Vector3, WebGLRenderer } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { LIGHTS } from './gfx/env'
 import { Post, type PostParams } from './gfx/post'
@@ -12,7 +12,7 @@ export function startWorldLab(canvas: HTMLCanvasElement) {
   document.getElementById('stage')!.style.inset = '0'
   const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = PCFShadowMap
+  renderer.shadowMap.type = PCFSoftShadowMap
   const world = new World(renderer)
   const q = new URLSearchParams(location.search)
   const camera = new PerspectiveCamera(Number(q.get('fov') ?? 40), 16 / 9, 2, 30000)

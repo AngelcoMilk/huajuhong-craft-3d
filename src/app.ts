@@ -1,4 +1,4 @@
-import { Color, InstancedMesh, Object3D, PCFShadowMap, PerspectiveCamera, Vector2, Vector3, WebGLRenderer } from 'three'
+import { Color, InstancedMesh, Object3D, PCFSoftShadowMap, PerspectiveCamera, Vector2, Vector3, WebGLRenderer } from 'three'
 import { Sound } from './audio/sound'
 import { Director } from './director'
 import { Post, type PostParams } from './gfx/post'
@@ -58,7 +58,7 @@ export class App implements UIHost {
     this.canvas = document.getElementById('gl') as HTMLCanvasElement
     this.renderer = new WebGLRenderer({ canvas: this.canvas, antialias: false, powerPreference: 'high-performance', stencil: false })
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = PCFShadowMap
+    this.renderer.shadowMap.type = PCFSoftShadowMap
     this.world = new World(this.renderer, line.cast)
     this.director = new Director(this.world, line)
     this.duration = this.director.duration
@@ -83,6 +83,8 @@ export class App implements UIHost {
       fadeColor: new Color('#F2E9D8'),
     }
     LOOK = LOOKS[Math.min(2, Math.max(0, Math.round(Number(q.get('look') ?? 0)) || 0))]
+    // ?ao=0 关掉环境光遮蔽（对比用），?ao=0.5 半强度
+    this.post.aoStrength = Math.max(0, Math.min(1.5, Number(q.get('ao') ?? 0.7) || 0))
     const cards = chooser ? LINES.map((l) => ({ line: l, dur: l.ready ? l.acts(this.director.stage).reduce((a, b) => a + b.dur, 0) : 0 })) : null
     this.ui = new UI(document.getElementById('ui')!, this, q.has('debug'), this.director.story, cards)
     if (q.has('t')) this.T = clamp(Number(q.get('t')), 0, DURATION)

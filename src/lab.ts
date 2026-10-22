@@ -1,4 +1,4 @@
-import { BoxGeometry, Color, Mesh, PerspectiveCamera, PlaneGeometry, Scene, Vector2, Vector3, WebGLRenderer, PCFShadowMap } from 'three'
+import { BoxGeometry, Color, Mesh, PerspectiveCamera, PlaneGeometry, Scene, Vector2, Vector3, WebGLRenderer, PCFSoftShadowMap } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { Environment, LIGHTS } from './gfx/env'
 import { Post, type PostParams } from './gfx/post'
@@ -11,7 +11,7 @@ export function startLab(canvas: HTMLCanvasElement, mode: string) {
   document.getElementById('stage')!.style.inset = '0'
   const renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' })
   renderer.shadowMap.enabled = true
-  renderer.shadowMap.type = PCFShadowMap
+  renderer.shadowMap.type = PCFSoftShadowMap
   renderer.autoClear = true
   const scene = new Scene()
   const camera = new PerspectiveCamera(32, 16 / 9, 0.5, 30000)
