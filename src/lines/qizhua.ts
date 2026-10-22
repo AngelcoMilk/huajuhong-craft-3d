@@ -8,7 +8,7 @@ import { Sun } from '../acts/sun'
 import { Weigh } from '../acts/weigh'
 import type { LineDef } from './types'
 
-// 七爪橘红：药典 1963 年版原句（保留原书"出去果瓤"），分句照 site/src/game/story/notes.ts。
+// 七爪橘红：药典 1963 年版原句（保留原书"出去果瓤"）。
 // 字幕不给时长、温度这类资料里没有的数字，只说看得见、摸得着的变化。
 
 export const PHARMACOPOEIA = [
@@ -21,7 +21,6 @@ export const PHARMACOPOEIA = [
   { key: 'p7', text: '再焙干即得。' },
 ]
 export const PHARMACOPOEIA_SOURCE = '——《中国药典》1963 年版一部"橘红"'
-export const PHARMACOPOEIA_NOTE = '原书作"出去果瓤"，1985 年版起作"除去"。'
 
 const text = (k: string) => PHARMACOPOEIA.find((p) => p.key === k)!.text
 
@@ -44,8 +43,6 @@ export const QIZHUA: LineDef = {
       { key: 'p7', text: text('p7'), clear: ['bake', 18] },
     ],
     source: PHARMACOPOEIA_SOURCE,
-    sourceNote: PHARMACOPOEIA_NOTE,
-    quote: true,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: ['p1'] },
       { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: ['p2'] },

@@ -79,6 +79,11 @@ export class Director {
         add((i === 0 ? 0.6 : c.start) + 1.22, 'stamp', { gain: 0.7 })
       })
       add(this.duration - 13.6, 'page', { gain: 0.7 })
+      // 书页翻开、合上：比章节翻页轻
+      for (const m of this.story.moments) {
+        add(m.open + 0.05, 'page', { gain: 0.4 })
+        add(m.close - 0.75, 'page', { gain: 0.22 })
+      }
     })
     // 果瓤从果子里拎出来以后挂在场景上（不跟着果皮转）
     w.scene.attach(w.hero.pulp)
@@ -89,6 +94,9 @@ export class Director {
       ambience: { boil: 0, fire: 1, oven: 0, day: 1, night: 0 },
     }
   }
+
+  /** 入口页上悬停某种做法时，院子的光往那一种的时辰偏过去（k = 0 就是原样） */
+  readonly mood = { light: cloneLight(LIGHTS.morning), k: 0 }
 
   setMouse(x: number, y: number) {
     this.mouse.set(x, y)
@@ -233,6 +241,7 @@ export class Director {
 
     // 光
     const light = this.lightAt(T)
+    if (this.mood.k > 0.001) mixLight(light, light, this.mood.light, this.mood.k)
     w.env.apply(light, time + c.lapse)
     SHARED.uSunDir.value.copy(light.sun)
     SHARED.uSunCol.value.copy(light.sunColor)

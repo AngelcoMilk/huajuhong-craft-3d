@@ -153,6 +153,12 @@ export class Sound {
     }
   }
 
+  /** 换一条线：动作声音换成那一条的 */
+  setCues(cues: Cue[]) {
+    this.cues = cues.sort((x, y) => x.t - y.t)
+    this.live = false
+  }
+
   /** 第一次点（或按键）的时候建；切走标签页就停 */
   unlock() {
     if (!this.ctx) this.build()

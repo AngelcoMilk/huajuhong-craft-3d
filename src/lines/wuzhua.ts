@@ -45,8 +45,6 @@ export const WUZHUA: LineDef = {
       { key: 'p7', text: text('p7'), clear: ['bake', 18] },
     ],
     source: PHARMACOPOEIA_SOURCE,
-    sourceNote: '',
-    quote: true,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: ['p1'] },
       { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: ['p2'] },

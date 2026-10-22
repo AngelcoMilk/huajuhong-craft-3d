@@ -6,7 +6,6 @@ import type { LineDef } from './types'
 
 // 压果片：大果烫过，整个压扁（木板 + 压石压一夜，半夜翻一次），上焙炉烘干，再压一回，用切药刀切成 2～4 毫米的片。
 // 没有可引的原文，本子上的字按药典的句式改写，出处标"据《化橘红制作工艺》等"。
-// 圆果（整果烘干、不压）用字幕带过；"家家户户自己压果是 1980 年代分户以后"也用字幕交代（docs/14）。
 
 export const YAGUO: LineDef = {
   id: 'yaguo',
@@ -26,8 +25,6 @@ export const YAGUO: LineDef = {
       { key: 'y6', text: '切成2～4毫米的薄片即得。', clear: ['slice', 20] },
     ],
     source: '——据《化橘红制作工艺》等',
-    sourceNote: '整个烘干、不压的叫圆果。家家户户自己压果切片，是 1980 年代分户以后的事，现在多由合作社和厂里做。',
-    quote: false,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: [], card: '挑四两半以上的大果。' },
       { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: ['y1'], card: '大果整个烫过。' },
@@ -58,8 +55,6 @@ export const YAGUO: LineDef = {
       ['slice', 12.4, 18, '切面上看得见外皮一圈、白瓤、压实的果肉。'],
       ['slice', 22, 28, '剩下九个，也都这样一个个切成片。'],
       ['winnow', 1.6, 6.6, '一簸箕压果片。'],
-      ['winnow', 7.2, 12.4, '整个烘、不压的，叫圆果。'],
-      ['winnow', 13, 19, '家家户户自己压果切片，是八十年代分户以后的事。'],
     ],
     ending: { title: '压果片', seal: '成', replay: '再看一遍', more: '去展厅看看现在怎么做' },
   },

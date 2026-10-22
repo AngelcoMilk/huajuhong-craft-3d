@@ -29,8 +29,6 @@ export const TAI: LineDef = {
       { key: 'q8', text: '经沸水烫后烘干或直接烘干即得。', clear: ['jar', 8] },
     ],
     source: '——《化州县志》第六篇',
-    sourceNote: '',
-    quote: true,
     chapters: [
       { num: '一', title: '青果', seal: '摘', from: 'pick', phrases: ['q1', 'q2'] },
       { num: '二', title: '烫果', seal: '烫', from: 'blanch', phrases: [], card: '一半烫过再烘，一半直接烘。' },

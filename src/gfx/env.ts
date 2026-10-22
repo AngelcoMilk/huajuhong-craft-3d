@@ -279,6 +279,25 @@ export class Environment {
     this.pmrem = new PMREMGenerator(renderer)
   }
 
+  /** 换线时整个院子要重建：环境反射、阴影贴图这些显存先还掉 */
+  dispose() {
+    this.envRT?.dispose()
+    this.envRT = null
+    this.pmrem.dispose()
+    this.sun.shadow.dispose()
+    for (const m of [this.sky, this.envSky]) {
+      m.geometry.dispose()
+      ;(m.material as ShaderMaterial).dispose()
+    }
+    this.envScene.traverse((o) => {
+      const mesh = o as Mesh
+      if (mesh.isMesh) {
+        mesh.geometry.dispose()
+        ;(mesh.material as MeshBasicMaterial).dispose()
+      }
+    })
+  }
+
   /** 阴影只罩住镜头关心的那一块，越近越清楚 */
   setShadowFocus(center: Vector3, radius: number) {
     this.shadowFocus.copy(center)

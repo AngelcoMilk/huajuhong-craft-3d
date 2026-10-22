@@ -17,12 +17,17 @@
 }
 
 :root {
-  --ink: #3b2a22;
-  --ink-soft: #6d5646;
-  --paper: #f2e9d8;
-  --paper-deep: #e3cfa8;
-  --red: #c8452f;
+  --ink: #2f2420;
+  --ink-soft: #6b5545;
+  --paper: #f4ecdc;
+  --page: #efe5cf;
+  /* 片子里章节之间翻页那层纸的颜色（后期里混出来的，量过） */
+  --veil: #e2d0af;
+  --red: #c0412b;
   --shadow: #6e6278;
+  --light: #fbf4e8;
+  /* 纸纹：长纤维 + 细麻点，噪声滤镜现算（不用图片） */
+  --tex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.018 0.11' numOctaves='3' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.33 0 0 0 0 0.22 1.1 0 0 0 -0.72'/%3E%3C/filter%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' seed='8'/%3E%3CfeColorMatrix values='0 0 0 0 0.38 0 0 0 0 0.3 0 0 0 0 0.22 1.3 0 0 0 -0.82'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)'/%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
 }
 
 html,
@@ -61,79 +66,16 @@ body {
 #ui .hit {
   pointer-events: auto;
 }
-
-/* ———— 封面 ———— */
-.cover {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-left: 230px;
-  transition: opacity 0.9s ease;
+.paper-tex {
+  background-image: var(--tex);
+  background-size: 360px 360px;
 }
-.cover.hide {
-  opacity: 0;
+/* 竖排里的数字：一两位横着挤进一格，长的一个个立起来 */
+.tcy {
+  text-combine-upright: all;
 }
-.cover .t {
-  font-weight: 600;
-  font-size: 150px;
-  letter-spacing: 0.16em;
-  line-height: 1;
-}
-.cover .line {
-  width: 520px;
-  height: 2px;
-  margin: 46px 0 34px;
-  background: linear-gradient(90deg, var(--ink) 0%, rgba(59, 42, 34, 0) 100%);
-  opacity: 0.55;
-}
-.cover .s {
-  font-family: 'HJ Hand', serif;
-  font-size: 46px;
-  color: var(--ink-soft);
-  letter-spacing: 0.08em;
-}
-.cover .sentence {
-  margin-top: 26px;
-  font-size: 26px;
-  color: var(--ink-soft);
-  opacity: 0.7;
-  letter-spacing: 0.06em;
-  max-width: 980px;
-  line-height: 1.8;
-}
-.cover .play {
-  margin-top: 70px;
-  display: inline-flex;
-  align-items: center;
-  gap: 22px;
-  width: max-content;
-  padding: 18px 46px 18px 34px;
-  border-radius: 999px;
-  border: 2px solid rgba(59, 42, 34, 0.7);
-  font-size: 38px;
-  letter-spacing: 0.3em;
-  cursor: pointer;
-  transition: background 0.25s, color 0.25s;
-}
-.cover .play:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-.cover .play i {
-  width: 0;
-  height: 0;
-  border-left: 22px solid currentColor;
-  border-top: 14px solid transparent;
-  border-bottom: 14px solid transparent;
-}
-.cover .tip {
-  margin-top: 30px;
-  font-family: 'HJ Hand', serif;
-  font-size: 26px;
-  color: var(--ink-soft);
-  opacity: 0.6;
+.up {
+  text-orientation: upright;
 }
 
 /* ———— 印章 ———— */
@@ -141,6 +83,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: none;
   background: var(--red);
   color: #f6ecdc;
   font-weight: 600;
@@ -154,78 +97,534 @@ body {
   display: block;
   line-height: 1;
 }
+/* 两个字的长方印：竖着排 */
+.seal.two span {
+  writing-mode: vertical-rl;
+  letter-spacing: 0.08em;
+}
 
-/* ———— 章节标题卡 ———— */
-.card {
+/* 竖排左侧铺的一层宣纸色：背景虚了，字靠这层纸托着 */
+.wash {
   position: absolute;
-  left: 230px;
-  top: 300px;
-  width: 1300px;
-  opacity: 0;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(244, 236, 220, 0.94) 0%, rgba(244, 236, 220, 0.82) 20%, rgba(244, 236, 220, 0.42) 40%, rgba(244, 236, 220, 0) 62%);
 }
-.card .num {
-  font-weight: 600;
-  font-size: 40px;
-  letter-spacing: 0.3em;
-  color: var(--ink-soft);
-  height: 50px;
+
+/* ———— 入口页：四条屏 ———— */
+.choose {
+  position: absolute;
+  inset: 0;
 }
-.card .title-row {
+#ui:not([data-mode='choose']) .choose {
+  display: none;
+}
+.choose .head {
+  position: absolute;
+  left: 120px;
+  top: 104px;
+  width: 330px;
   display: flex;
+  flex-direction: row-reverse;
+  gap: 30px;
+  transition: opacity 0.45s ease;
+}
+.head .tcol {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 40px;
-  margin-top: 6px;
+  gap: 30px;
 }
-.card .title {
+.head .t {
+  writing-mode: vertical-rl;
   font-weight: 600;
-  font-size: 112px;
-  letter-spacing: 0.14em;
-  line-height: 1.15;
-}
-.card .seal {
-  width: 96px;
-  height: 96px;
-  font-size: 62px;
-}
-.card .rule {
-  height: 2px;
-  background: var(--ink);
-  opacity: 0.45;
-  margin: 34px 0 30px;
-  transform-origin: 0 0;
-}
-.card .phrase {
-  font-size: 46px;
+  font-size: 116px;
   letter-spacing: 0.12em;
-  line-height: 1.5;
+  line-height: 1;
+}
+.head .s {
+  writing-mode: vertical-rl;
+  font-family: 'HJ Hand', serif;
+  font-size: 34px;
+  letter-spacing: 0.24em;
+  color: var(--ink-soft);
+  margin-top: 150px;
   white-space: nowrap;
 }
-.card .phrase b {
-  font-weight: 400;
-  display: inline-block;
+.choose .head .seal {
+  width: 46px;
+  height: 92px;
+  font-size: 30px;
+}
+.choose .hint {
+  position: absolute;
+  left: 120px;
+  bottom: 74px;
+  font-family: 'HJ Hand', serif;
+  font-size: 24px;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  opacity: 0.75;
+  transition: opacity 0.45s ease;
+}
+.choose.leaving .head,
+.choose.leaving .hint {
+  opacity: 0;
 }
 
-/* 角上的小标签 */
-.tag {
+.scrolls {
   position: absolute;
-  left: 60px;
-  top: 48px;
+  left: 520px;
+  top: 96px;
+  display: flex;
+  gap: 44px;
+  align-items: flex-start;
+}
+.scroll {
+  position: relative;
+  width: 290px;
+  padding-top: 46px;
+  cursor: pointer;
+  transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.5s ease, filter 0.5s ease;
+}
+[data-mode='choose'] .scroll {
+  animation: hang 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.15s + var(--i) * 0.09s);
+}
+@keyframes hang {
+  from {
+    opacity: 0;
+    transform: translateY(-26px);
+  }
+}
+.scrolls:hover .scroll:not(:hover) {
+  opacity: 0.58;
+  filter: saturate(0.7);
+}
+.scroll:hover {
+  transform: translateY(-6px);
+}
+.scroll.soon {
+  cursor: default;
+  opacity: 0.5;
+}
+.scroll .cord {
+  position: absolute;
+  left: -5px;
+  right: -5px;
+  top: 0;
+  height: 46px;
+}
+.scroll .cord svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.scroll .cord path {
+  fill: none;
+  stroke: #5b4636;
+  stroke-width: 1.6;
+}
+.scroll .cord circle {
+  fill: #7a5a40;
+}
+.scroll .rod {
+  position: relative;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #8a5d3e 0%, #5a3925 55%, #3c2519 100%);
+  box-shadow: 0 3px 6px rgba(30, 20, 16, 0.3);
+}
+.scroll .rod.top {
+  height: 13px;
+  margin: 0 -10px;
+}
+.scroll .rod.bottom {
+  height: 20px;
+  margin: 0 -4px;
+  border-radius: 10px;
+}
+/* 轴头 */
+.scroll .rod.bottom i {
+  position: absolute;
+  top: -4px;
+  width: 15px;
+  height: 28px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #cdbd9b, #f2e8d2 45%, #b9a77f);
+  box-shadow: 0 2px 4px rgba(30, 20, 16, 0.35);
+}
+.scroll .rod.bottom i:first-child {
+  left: -13px;
+}
+.scroll .rod.bottom i:last-child {
+  right: -13px;
+}
+/* 裱边：浅茶色的绫 */
+.scroll .mount {
+  padding: 18px 14px 20px;
+  background: linear-gradient(180deg, #d6cbad, #cdc1a1);
+  box-shadow: 0 22px 44px rgba(40, 28, 30, 0.3), inset 0 0 0 1px rgba(90, 70, 50, 0.18);
+}
+.scroll .paper {
+  position: relative;
+  height: 560px;
+  overflow: hidden;
+  background-color: var(--paper);
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 50, 0.18), inset 0 0 26px rgba(150, 120, 80, 0.12);
+  transition: height 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.scroll:not(.soon):hover .paper,
+.scroll.picked .paper {
+  height: 800px;
+}
+.scroll .upper {
+  position: relative;
+  height: 560px;
+}
+.scroll .title {
+  position: absolute;
+  right: 24px;
+  top: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.scroll .name {
+  writing-mode: vertical-rl;
+  font-weight: 600;
+  font-size: 58px;
+  letter-spacing: 0.14em;
+  line-height: 1;
+}
+.scroll .title .seal {
+  width: 50px;
+  height: 50px;
+  font-size: 32px;
+}
+.scroll .blurb {
+  position: absolute;
+  right: 116px;
+  top: 54px;
+  height: 410px;
+  writing-mode: vertical-rl;
+  font-size: 22px;
+  line-height: 1.9;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+.scroll .dur {
+  position: absolute;
+  left: 22px;
+  bottom: 24px;
+  writing-mode: vertical-rl;
+  font-family: 'HJ Hand', serif;
+  font-size: 21px;
+  letter-spacing: 0.22em;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+.scroll .lower {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 560px;
+  height: 240px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.scroll:not(.soon):hover .lower,
+.scroll.picked .lower {
+  opacity: 1;
+  transition-delay: 0.15s;
+}
+.scroll .lower .rule {
+  margin: 0 20px;
+  height: 3px;
+  border-top: 1px solid rgba(47, 36, 32, 0.32);
+  border-bottom: 1px solid rgba(47, 36, 32, 0.32);
+}
+.scroll .pic {
+  position: absolute;
+  left: 8px;
+  top: 30px;
+  width: 178px;
+  height: 151px;
+}
+.scroll .quote {
+  position: absolute;
+  right: 14px;
+  top: 22px;
+  height: 176px;
+  writing-mode: vertical-rl;
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.scroll .steps {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.scroll .steps .seal {
+  width: 27px;
+  height: 27px;
+  font-size: 17px;
+  box-shadow: inset 0 0 0 1.5px rgba(246, 236, 220, 0.85), inset 0 0 0 3px var(--red);
+  opacity: 0;
+  transform: scale(1.7) rotate(-8deg);
+}
+.scroll:not(.soon):hover .steps .seal,
+.scroll.picked .steps .seal {
+  animation: stamp 0.26s cubic-bezier(0.3, 0, 0.4, 1) both;
+  animation-delay: calc(0.75s + var(--k) * 0.11s);
+}
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.7) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+}
+/* 白描：一笔笔勾出来，后画的块铺上纸色把后面的线盖住 */
+.art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: url(#brush);
+}
+.art path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  fill-opacity: 0;
+  transition: stroke-dashoffset 0.01s, fill-opacity 0.01s;
+}
+.art path.soft {
+  stroke: #7d6553;
+}
+.art path.red {
+  stroke: var(--red);
+}
+.art path.f-paper {
+  fill: #f6efe1;
+}
+.art path.f-back {
+  fill: #e6d9bf;
+}
+.scroll:not(.soon):hover .art path,
+.scroll.picked .art path {
+  stroke-dashoffset: 0;
+  fill-opacity: 1;
+  transition: stroke-dashoffset 0.75s ease-out calc(0.3s + var(--d)), fill-opacity 0.35s ease calc(0.5s + var(--d));
+}
+.scroll.picked .title .seal {
+  animation: restamp 0.4s cubic-bezier(0.3, 0, 0.4, 1);
+}
+@keyframes restamp {
+  45% {
+    transform: scale(1.35) rotate(-6deg);
+  }
+}
+.choose.leaving .scroll:not(.picked) {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* ———— 封面（直接打开某一条线的网址时） ———— */
+.cover {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.6s ease;
+}
+.cover.hide {
+  opacity: 0;
+}
+#ui[data-mode='choose'] .cover {
+  display: none;
+}
+.cover .head {
+  position: absolute;
+  left: 150px;
+  top: 112px;
+  width: 380px;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 36px;
+}
+.cover .head .t {
+  font-size: 128px;
+}
+.cover .head .seal {
+  width: 72px;
+  height: 72px;
+  font-size: 46px;
+}
+.cover .head .s {
+  font-size: 38px;
+  margin-top: 170px;
+}
+/* 开始：一张朱红的题签 */
+.cover .go {
+  position: absolute;
+  left: 156px;
+  top: 862px;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 20px;
+  padding: 14px 44px 14px 36px;
+  border: 2px solid var(--red);
+  outline: 1px solid rgba(192, 65, 43, 0.55);
+  outline-offset: 5px;
+  color: var(--red);
+  background: rgba(244, 236, 220, 0.72);
   font-weight: 600;
-  font-size: 48px;
-  letter-spacing: 0.2em;
-  color: #fbf4e8;
-  text-shadow: 0 2px 14px rgba(40, 28, 30, 0.55), 0 0 2px rgba(40, 28, 30, 0.4);
+  font-size: 34px;
+  letter-spacing: 0.5em;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+.cover .go:hover {
+  background: var(--red);
+  color: var(--paper);
+}
+.cover .go i {
+  width: 0;
+  height: 0;
+  border-left: 18px solid currentColor;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+}
+.cover .tip {
+  position: absolute;
+  left: 156px;
+  bottom: 52px;
+  font-family: 'HJ Hand', serif;
+  font-size: 24px;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+.cover .others {
+  position: absolute;
+  left: 60px;
+  top: 44px;
+  font-family: 'HJ Hand', serif;
+  font-size: 26px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.cover .others:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 8px;
+}
+
+/* ———— 章节题签 ———— */
+.card {
+  position: absolute;
+  left: 200px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+}
+.card .slip {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  gap: 30px;
+  padding: 56px 48px 54px 46px;
+  background-color: var(--paper);
+  border: 1px solid rgba(59, 42, 34, 0.38);
+  box-shadow: inset 0 0 0 6px var(--paper), inset 0 0 0 7px rgba(59, 42, 34, 0.22), 0 18px 44px rgba(40, 28, 30, 0.2);
+}
+.card .head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.card .num {
+  writing-mode: vertical-rl;
+  font-weight: 600;
+  font-size: 30px;
+  letter-spacing: 0.24em;
+  color: var(--red);
+}
+.card .title {
+  writing-mode: vertical-rl;
+  font-weight: 600;
+  font-size: 94px;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+.card b {
+  display: inline-block;
+  font-weight: inherit;
+  color: transparent;
+  -webkit-text-stroke: 1px transparent;
+}
+.card .seal {
+  width: 78px;
+  height: 78px;
+  font-size: 50px;
+  opacity: 0;
+}
+/* 一笔飞白的竖笔 */
+.card .brush {
+  align-self: stretch;
+  width: 11px;
+  margin: 4px 0;
+  border-radius: 6px 6px 40% 40%;
+  background: linear-gradient(180deg, rgba(47, 36, 32, 0.95) 0%, var(--ink) 12%, rgba(47, 36, 32, 0.88) 64%, rgba(47, 36, 32, 0) 100%);
+  filter: url(#dry-brush);
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+}
+.card .phrase {
+  writing-mode: vertical-rl;
+  max-height: 560px;
+  font-size: 40px;
+  letter-spacing: 0.14em;
+  line-height: 1.65;
+}
+
+/* ———— 角标 ———— */
+.tag {
+  position: absolute;
+  left: 44px;
+  top: 38px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 9px 30px 9px 9px;
+  background-color: rgba(244, 236, 220, 0.93);
+  box-shadow: 0 6px 18px rgba(40, 28, 30, 0.22), inset 0 0 0 1px rgba(59, 42, 34, 0.22);
+  font-weight: 600;
+  font-size: 40px;
+  letter-spacing: 0.16em;
+  color: var(--ink);
   transition: opacity 0.6s;
   opacity: 0;
 }
 .tag .seal {
-  width: 88px;
-  height: 88px;
-  font-size: 56px;
-  text-shadow: none;
+  width: 68px;
+  height: 68px;
+  font-size: 44px;
 }
 
 /* ———— 字幕 ———— */
@@ -243,137 +642,174 @@ body {
   opacity: 0;
 }
 
-/* ———— 本子 ———— */
+/* ———— 书页：线装书的半页 ———— */
 .book {
   position: absolute;
-  right: 60px;
-  top: 120px;
-  height: 760px;
-  padding: 46px 40px 46px 34px;
-  background: linear-gradient(180deg, #f5ecdb, #ecdfc6);
-  border-radius: 6px 14px 14px 6px;
-  box-shadow: 0 18px 50px rgba(40, 28, 30, 0.35), inset 6px 0 10px rgba(120, 90, 60, 0.18);
-  writing-mode: vertical-rl;
-  font-size: 34px;
-  line-height: 1.9;
-  letter-spacing: 0.14em;
-  transition: transform 0.9s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.9s;
+  right: 52px;
+  top: 92px;
+  perspective: 1800px;
+  visibility: hidden;
 }
-.book::before {
+.leaf {
+  position: relative;
+  padding: 42px 24px 30px;
+  background-color: var(--page);
+  border-radius: 3px 6px 6px 3px;
+  transform-origin: 100% 50%;
+  box-shadow: 0 20px 50px rgba(40, 28, 30, 0.36), inset -12px 0 16px rgba(120, 90, 60, 0.16), inset 0 0 40px rgba(150, 120, 80, 0.14);
+}
+/* 四周双边：外粗内细 */
+.frame {
+  display: flex;
+  flex-direction: row-reverse;
+  padding: 7px;
+  border: 2.6px solid rgba(47, 36, 32, 0.84);
+  box-shadow: inset 0 0 0 3.4px var(--page), inset 0 0 0 4.6px rgba(47, 36, 32, 0.7);
+}
+.cols {
+  writing-mode: vertical-rl;
+  height: 648px;
+  font-size: 32px;
+  line-height: 56px;
+  letter-spacing: 4px;
+  /* 界行（乌丝栏） */
+  background: repeating-linear-gradient(to left, transparent 0 55px, rgba(47, 36, 32, 0.28) 55px 56px);
+  background-position: right top;
+}
+.ch {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  -webkit-text-stroke: 0.9px rgba(190, 70, 50, 0.42);
+}
+.ch.inked {
+  color: var(--ink);
+  -webkit-text-stroke: 0 transparent;
+}
+/* 朱笔圈点：字的右边一个小圈 */
+.ch.ring::after {
   content: '';
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -6px;
+  border: 1.6px solid var(--red);
+  border-radius: 50%;
+  opacity: var(--c);
+  transform: scale(var(--c));
+}
+.cols .src {
+  padding-top: 64px;
+  font-size: 21px;
+  letter-spacing: 2px;
+  color: var(--ink-soft);
+}
+/* 书口：鱼尾 + 书名 */
+.kou {
+  width: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 64px;
+  margin-right: 7px;
+  border-right: 1px solid rgba(47, 36, 32, 0.6);
+}
+.kou .fish {
+  width: 30px;
+  height: 16px;
+}
+.kou .fish svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: rgba(47, 36, 32, 0.86);
+}
+.kou .kt {
+  margin-top: 14px;
+  writing-mode: vertical-rl;
+  font-size: 18px;
+  letter-spacing: 0.32em;
+  color: var(--ink);
+}
+.leaf .shade {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background:
-    radial-gradient(ellipse 60% 40% at 30% 65%, rgba(150, 120, 90, 0.16), transparent 70%),
-    radial-gradient(ellipse 40% 30% at 70% 25%, rgba(150, 120, 90, 0.12), transparent 70%);
+  background: linear-gradient(270deg, rgba(40, 28, 24, 0.05), rgba(40, 28, 24, 0.6));
   pointer-events: none;
-}
-.book.away {
-  transform: translateX(120%);
   opacity: 0;
-}
-.book .ph {
-  transition: filter 1.4s ease, opacity 1.4s ease, color 1.4s ease;
-  filter: blur(3px);
-  opacity: 0.32;
-  color: #5e5a63;
-}
-.book .ph.clear {
-  filter: none;
-  opacity: 1;
-  color: var(--ink);
-}
-.book .ph.now.clear {
-  text-shadow: 0 0 18px rgba(232, 137, 58, 0.35);
 }
 
 /* ———— 结尾 ———— */
-/* 一开始就是藏着的：不然页面刚出来那一下它是不透明的，再用 1.2 秒淡掉，入口页上会闪过一页结尾 */
 .end {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  gap: 90px;
-  padding-left: 200px;
-  transition: opacity 1.2s ease;
-  opacity: 0;
+  gap: 84px;
+  padding-left: 190px;
+  padding-bottom: 30px;
 }
-#ui .end .hit {
-  pointer-events: none;
+.endbook {
+  perspective: 2000px;
+  visibility: hidden;
 }
-.end .page {
-  position: relative;
-  height: 820px;
-  padding: 56px 50px;
-  background: linear-gradient(180deg, #f6eddd, #ecdfc6);
-  border-radius: 8px 16px 16px 8px;
-  box-shadow: 0 24px 70px rgba(40, 28, 30, 0.4), inset 8px 0 14px rgba(120, 90, 60, 0.18);
-  writing-mode: vertical-rl;
-  font-size: 40px;
-  line-height: 2;
-  letter-spacing: 0.16em;
+.endbook .leaf {
+  padding: 46px 28px 34px;
 }
-.end .page .src {
-  font-size: 26px;
-  color: var(--ink-soft);
-  margin-right: 30px;
-  letter-spacing: 0.08em;
+.endbook .cols {
+  height: 684px;
+  font-size: 34px;
+  line-height: 60px;
+  letter-spacing: 4px;
+  background: repeating-linear-gradient(to left, transparent 0 59px, rgba(47, 36, 32, 0.28) 59px 60px);
 }
-.end .page .note {
-  font-family: 'HJ Hand', serif;
-  font-size: 24px;
-  color: var(--ink-soft);
-  opacity: 0.8;
+.endbook .cols .src {
+  font-size: 22px;
 }
-.end .page .seal {
+.endbook .seal {
   position: absolute;
-  left: 46px;
-  bottom: 56px;
-  width: 84px;
-  height: 84px;
-  font-size: 54px;
-  writing-mode: horizontal-tb;
+  left: 78px;
+  bottom: 54px;
+  width: 80px;
+  height: 80px;
+  font-size: 52px;
+  opacity: 0;
 }
 .end .side {
   display: flex;
   flex-direction: column;
-  gap: 26px;
-  color: #fbf4e8;
+  align-items: flex-start;
+  gap: 30px;
+  color: var(--light);
   text-shadow: 0 2px 14px rgba(40, 28, 30, 0.55);
+  opacity: 0;
 }
 .end .side .t {
   font-weight: 600;
   font-size: 92px;
   letter-spacing: 0.16em;
+  margin-bottom: 10px;
 }
+/* 题签式的按钮：细细两道框 */
 .end .btn {
-  width: max-content;
-  padding: 14px 40px;
-  border-radius: 999px;
-  border: 2px solid rgba(251, 244, 232, 0.85);
+  padding: 12px 40px;
+  border: 1.5px solid rgba(251, 244, 232, 0.88);
+  outline: 1px solid rgba(251, 244, 232, 0.45);
+  outline-offset: 5px;
+  font-family: 'HJ Hand', serif;
   font-size: 32px;
   letter-spacing: 0.2em;
   cursor: pointer;
+  pointer-events: none;
   transition: background 0.25s, color 0.25s;
   text-shadow: none;
 }
 .end .btn:hover {
-  background: #fbf4e8;
+  background: rgba(251, 244, 232, 0.94);
   color: var(--ink);
-}
-.end .btn.ghost {
-  border-color: transparent;
-  padding-left: 0;
-  font-family: 'HJ Hand', serif;
-  letter-spacing: 0.08em;
-}
-.end .btn.ghost:hover {
-  background: none;
-  color: #fff;
-  text-decoration: underline;
-  text-underline-offset: 10px;
 }
 
 /* ———— 控制条 ———— */
@@ -385,15 +821,29 @@ body {
   height: 108px;
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 28px;
   padding: 0 56px;
-  background: linear-gradient(0deg, rgba(36, 26, 28, 0.55), rgba(36, 26, 28, 0));
-  color: #fbf4e8;
+  background: linear-gradient(0deg, rgba(36, 26, 28, 0.6), rgba(36, 26, 28, 0));
+  color: var(--light);
   font-size: 24px;
   transition: opacity 0.5s;
 }
 .ctrl.idle {
   opacity: 0;
+  pointer-events: none;
+}
+.ctrl .home {
+  padding: 5px 16px;
+  border: 1px solid rgba(251, 244, 232, 0.55);
+  font-family: 'HJ Hand', serif;
+  font-size: 22px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.ctrl .home:hover {
+  background: rgba(251, 244, 232, 0.16);
 }
 .ctrl .b {
   width: 50px;
@@ -418,43 +868,46 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 23px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(251, 244, 232, 0.28);
+  top: 24px;
+  height: 2px;
+  background: rgba(251, 244, 232, 0.3);
 }
 .ctrl .bar .fill {
   position: absolute;
   left: 0;
-  top: 23px;
-  height: 4px;
-  border-radius: 2px;
-  background: #fbf4e8;
+  top: 23.5px;
+  height: 3px;
+  background: #d9583e;
 }
 .ctrl .bar .tick {
   position: absolute;
-  top: 17px;
-  width: 2px;
-  height: 16px;
-  background: rgba(251, 244, 232, 0.65);
+  top: 22px;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: rgba(251, 244, 232, 0.8);
 }
 .ctrl .bar .lab {
   position: absolute;
-  top: -12px;
+  top: -14px;
+  font-family: 'HJ Hand', serif;
   font-size: 20px;
   letter-spacing: 0.1em;
   white-space: nowrap;
-  opacity: 0.75;
-  transform: translateX(6px);
+  opacity: 0.8;
+  transform: translateX(-2px);
 }
 .ctrl .bar .knob {
   position: absolute;
-  top: 16px;
-  width: 18px;
-  height: 18px;
-  margin-left: -9px;
-  border-radius: 50%;
-  background: #fbf4e8;
+  top: 18px;
+  width: 12px;
+  height: 12px;
+  margin-left: -8px;
+  background: var(--red);
+  border: 2px solid var(--light);
+  border-radius: 2px;
+  transform: rotate(45deg);
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
 }
 .ctrl .time {
@@ -467,9 +920,8 @@ body {
   min-width: 56px;
   text-align: center;
   cursor: pointer;
-  border: 1.5px solid rgba(251, 244, 232, 0.6);
-  border-radius: 10px;
-  padding: 4px 8px;
+  border: 3px double rgba(251, 244, 232, 0.6);
+  padding: 2px 8px;
   font-size: 22px;
 }
 .ctrl svg {
@@ -487,82 +939,17 @@ body {
   white-space: pre;
 }
 
-/* ———— 入口页：四种做法 ———— */
-.cover .others {
-  margin-top: 26px;
-  font-family: 'HJ Hand', serif;
-  font-size: 26px;
-  color: var(--ink-soft);
-  text-decoration: none;
-  width: max-content;
+/* ———— 换线时的那张纸 ———— */
+.curtain {
+  position: absolute;
+  inset: 0;
+  display: none;
+  background-color: var(--veil);
+  pointer-events: auto;
 }
-.cover .others:hover {
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 8px;
-}
-.cover.choose {
-  padding-left: 150px;
-}
-.cover.choose .t {
-  font-size: 120px;
-}
-.cover .cards {
-  margin-top: 64px;
-  display: flex;
-  gap: 34px;
-}
-.cover .lc {
-  box-sizing: border-box;
-  width: 360px;
-  padding: 34px 32px 30px;
-  border-radius: 14px;
-  background: rgba(246, 237, 221, 0.72);
-  border: 2px solid rgba(59, 42, 34, 0.25);
-  color: var(--ink);
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  cursor: pointer;
-  transition: background 0.25s, border-color 0.25s, transform 0.25s;
-}
-.cover .lc:hover {
-  background: rgba(246, 237, 221, 0.95);
-  border-color: rgba(59, 42, 34, 0.6);
-  transform: translateY(-4px);
-}
-.cover .lc .seal {
-  width: 64px;
-  height: 64px;
-  font-size: 40px;
-}
-.cover .lc .n {
-  font-weight: 600;
-  font-size: 46px;
-  letter-spacing: 0.12em;
-}
-.cover .lc .b {
-  font-size: 24px;
-  line-height: 1.7;
-  color: var(--ink-soft);
-  min-height: 122px;
-}
-.cover .lc .d {
-  font-family: 'HJ Hand', serif;
-  font-size: 24px;
-  color: var(--ink-soft);
-}
-.cover .lc.soon {
-  cursor: default;
-  opacity: 0.55;
-}
-.cover .lc.soon:hover {
-  transform: none;
-  background: rgba(246, 237, 221, 0.72);
-  border-color: rgba(59, 42, 34, 0.25);
-}
-.end a.btn {
-  color: inherit;
-  text-decoration: none;
+.curtain .tex {
+  position: absolute;
+  inset: 0;
+  background-image: var(--tex);
+  background-size: 360px 360px;
 }
