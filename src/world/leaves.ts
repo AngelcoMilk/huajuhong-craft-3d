@@ -22,9 +22,9 @@ const LIFT = 0.05 // 底面离支撑留一点（小果曲率大，留 0.5mm 兜�
 const COUNT = 3
 const UP = new Vector3(0, 1, 0)
 
-/** 从篮子里滑出去、到淡完消失（相对烫果段开头，秒） */
-const RELEASE0 = 8.65
-const RELEASE_SPAN = 0.4
+/** 从篮子里滑出去、到淡完消失（相对烫果段开头，秒）——烫果段的声音按这两个时刻对齐 */
+export const RELEASE0 = 8.65
+export const RELEASE_SPAN = 0.4
 const FADE_IN = 0.85 // 离开后多久开始淡
 const FADE_LEN = 1.5 // 淡多久（合计约 2.35 秒收完，正好还在锅沿上方）
 
@@ -116,6 +116,8 @@ interface Leaf {
 
 export class BasketLeaves {
   readonly group = new Group()
+  /** 这条线实际放了几片（小果篮少一片）：烫果段据此排"叶子被抖出去"的声音 */
+  count = 0
   private readonly leaves: Leaf[] = []
   /** 已经放好的叶子的三角面（篮子本地坐标），后放的叶子要搁在它们上面而不是穿过去 */
   private readonly placed: number[][] = []
@@ -130,6 +132,7 @@ export class BasketLeaves {
     const slots = stage.layout.basket
     // 小果篮（橘红胎）果子小、可放叶子的面积也小，少放一片，免得互相挤
     const count = stage.w.tai ? COUNT - 1 : COUNT
+    this.count = count
     const radius = (i: number) => stage.layout.lift(i)
     // 果堆最高的那几个果子，叶子往它们身上搁
     // 只挑"靠中间、又顶得高"的果子：叶子横着出去最多 9.5cm，篮口半径 18，

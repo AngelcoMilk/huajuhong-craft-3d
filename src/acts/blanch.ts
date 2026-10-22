@@ -5,6 +5,7 @@ import type { LightName } from '../gfx/env'
 import type { Stage } from '../stage'
 import { easeInOut, easeOut, hash1, hop, keys, lerp, rng, seg, setCast, smoother, smoothstep, TAU } from '../util'
 import { LAYOUT } from '../world/layout'
+import { RELEASE0, RELEASE_SPAN } from '../world/leaves'
 import { Act } from './act'
 
 // 烫果：篮子从灶前地上拎起来，十个果一起倒进滚水锅里，浮着打转；一烫就用竹笊篱分三勺捞到焙炉的大竹筛上，摊开放凉沥水。
@@ -68,6 +69,16 @@ export class Blanch extends Act {
     // 篮子拎起来，倾过去，果在篮里滚出来，一个个扑通落进滚水
     add(LIFT_AT, 'rustle', { dur: 0.7, gain: 0.4, at: BASKET_FLOOR })
     add(8.25, 'rustle', { dur: 0.8, gain: 0.45, pitch: 0.85, at: wok })
+    // 叶子也被倒出去：每片脱离的精确时刻由叶子自己按种子抖，这里按这条线实际片数错开近似排；
+    // 比上面那声果滚落更脆、更轻（叶尖擦过篮口的一下）
+    const leafN = this.s.w.leaves.count
+    for (let i = 0; i < leafN; i++)
+      add(RELEASE0 + 0.05 + i * (RELEASE_SPAN / leafN), 'rustle', {
+        dur: 0.22,
+        gain: 0.16 - 0.03 * i,
+        pitch: 1.35 + 0.08 * i,
+        at: BASKET_FLOOR,
+      })
     lay.pour.forEach((_, j) => add(POUR_AT + j * POUR_GAP + FALL - 0.01, 'plop', { gain: 0.5 - 0.12 * (j % 3), pitch: 0.9 + 0.05 * ((j * 7) % 5), at: wok }))
     add(10.76, 'thud', { gain: 0.4, pitch: 0.8, at: BASKET_FLOOR })
     add(10.78, 'tap', { gain: 0.25, pitch: 0.75, at: BASKET_FLOOR })
