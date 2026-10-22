@@ -18,7 +18,7 @@ import { hash1, smoothstep } from '../util'
 const L = 8.6 // 叶身长（厘米）
 const HALF = 2.8 // 半宽
 const TH = 0.09 // 叶片厚
-const LIFT = 0.02 // 底面离支撑留一点
+const LIFT = 0.05 // 底面离支撑留一点（小果曲率大，留 0.5mm 兜住采样间隙）
 const COUNT = 3
 const UP = new Vector3(0, 1, 0)
 
@@ -117,6 +117,8 @@ interface Leaf {
 export class BasketLeaves {
   readonly group = new Group()
   private readonly leaves: Leaf[] = []
+  /** 已经放好的叶子的三角面（篮子本地坐标），后放的叶子要搁在它们上面而不是穿过去 */
+  private readonly placed: number[][] = []
   private readonly m = new Matrix4()
   private readonly p = new Vector3()
   private readonly q = new Quaternion()
@@ -126,6 +128,8 @@ export class BasketLeaves {
   /** 舞台建好以后调一次：按这条线的果位、果径把叶子摆到果堆上 */
   build(stage: Stage) {
     const slots = stage.layout.basket
+    // 小果篮（橘红胎）果子小、可放叶子的面积也小，少放一片，免得互相挤
+    const count = stage.w.tai ? COUNT - 1 : COUNT
     const radius = (i: number) => stage.layout.lift(i)
     // 果堆最高的那几个果子，叶子往它们身上搁
     // 只挑"靠中间、又顶得高"的果子：叶子横着出去最多 9.5cm，篮口半径 18，
@@ -134,8 +138,8 @@ export class BasketLeaves {
       .map((_, i) => i)
       .sort((a, b) => slots[b].y + radius(b) - (slots[a].y + radius(a)))
     const near = order.filter((i) => Math.hypot(slots[i].x, slots[i].z) <= 5.6)
-    const tops = (near.length >= COUNT ? near : order).slice(0, COUNT)
-    for (let k = 0; k < COUNT; k++) {
+    const tops = (near.length >= count ? near : order).slice(0, count)
+    for (let k = 0; k < count; k++) {
       const seed = 11 + k * 23
       const geo = leafGeometry(seed)
       const base = slots[tops[k % tops.length]]
@@ -144,8 +148,9 @@ export class BasketLeaves {
       const lx = base.x + Math.cos(ang) * off
       const lz = base.z + Math.sin(ang) * off
       const yaw = hash1(seed + 9) * Math.PI * 2
-      const rest = restOn(slots, radius, geo, lx, lz, yaw)
+      const rest = restOn(slots, radius, this.placed, geo, lx, lz, yaw)
       const local = new Matrix4().compose(new Vector3(lx, rest.y + LIFT, lz), rest.q, new Vector3(1, 1, 1))
+      this.placed.push(localTris(geo, local))
       const mat = leafMaterial(k % 2 ? 1 : -1)
       const mesh = new Mesh(geo, mat)
       mesh.castShadow = true
@@ -203,7 +208,7 @@ export class BasketLeaves {
 }
 
 /** 让叶子贴着"叶心下顶得最高的那颗果子"的球面躺下，再抬到不穿任何果子 */
-function restOn(slots: Vector3[], radius: (i: number) => number, geo: BufferGeometry, lx: number, lz: number, yaw: number) {
+function restOn(slots: Vector3[], radius: (i: number) => number, placed: number[][], geo: BufferGeometry, lx: number, lz: number, yaw: number) {
   const qyaw = new Quaternion().setFromEuler(new Euler(0, yaw, 0))
   // 本地采样点（叶面顶点 + 重心）先只按 yaw 摊开，求个叶心
   const local = localSamples(geo)
@@ -249,14 +254,14 @@ function restOn(slots: Vector3[], radius: (i: number) => number, geo: BufferGeom
   const v = new Vector3()
   for (const [sx, sy, sz] of local) {
     v.set(sx, sy, sz).applyQuaternion(q)
-    const need = supportLocal(slots, radius, lx + v.x, lz + v.z) - v.y
+    const need = supportLocal(slots, radius, placed, lx + v.x, lz + v.z) - v.y
     if (need > y) y = need
   }
   return { q, y }
 }
 
 /** 篮里那些果子（球）在本地 (x,z) 处顶到多高 */
-function supportLocal(slots: Vector3[], radius: (i: number) => number, x: number, z: number) {
+function supportLocal(slots: Vector3[], radius: (i: number) => number, placed: number[][], x: number, z: number) {
   let h = 0 // 没有果子顶着就是篮底
   for (let i = 0; i < slots.length; i++) {
     const o = slots[i]
@@ -269,7 +274,52 @@ function supportLocal(slots: Vector3[], radius: (i: number) => number, x: number
       if (top > h) h = top
     }
   }
+  // 先落下的叶子：取它们三角面在这一点的高度（顶面更高，正好当"上一片"的支撑）
+  for (const t of placed) {
+    for (let i = 0; i < t.length; i += 9) {
+      const y = heightInTriangle(t, i, x, z)
+      if (y > h) h = y
+    }
+  }
   return h
+}
+
+/** 点 (x,z) 落在三角形里的高度；不在里面（或竖着的边）给 -Infinity */
+function heightInTriangle(t: number[], i: number, x: number, z: number) {
+  const ax = t[i]
+  const az = t[i + 2]
+  const bx = t[i + 3]
+  const bz = t[i + 5]
+  const cx = t[i + 6]
+  const cz = t[i + 8]
+  const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz)
+  if (Math.abs(d) < 1e-6) return -Infinity
+  const u = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d
+  const v = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d
+  const w = 1 - u - v
+  if (u < -0.0005 || v < -0.0005 || w < -0.0005) return -Infinity
+  return u * t[i + 1] + v * t[i + 4] + w * t[i + 7]
+}
+
+/** 一片叶子在篮子本地坐标里的三角面 */
+function localTris(geo: BufferGeometry, m: Matrix4) {
+  const pa = geo.attributes.position
+  const v = new Vector3()
+  const pts: { x: number; y: number; z: number }[] = []
+  for (let i = 0; i < pa.count; i++) {
+    v.set(pa.getX(i), pa.getY(i), pa.getZ(i)).applyMatrix4(m)
+    pts.push({ x: v.x, y: v.y, z: v.z })
+  }
+  const idx = geo.index
+  const n = idx ? idx.count : pa.count
+  const out: number[] = []
+  for (let i = 0; i < n; i += 3) {
+    const a = pts[idx ? idx.getX(i) : i]
+    const b = pts[idx ? idx.getX(i + 1) : i + 1]
+    const d = pts[idx ? idx.getX(i + 2) : i + 2]
+    out.push(a.x, a.y, a.z, b.x, b.y, b.z, d.x, d.y, d.z)
+  }
+  return out
 }
 
 /** 叶面上的采样点（三角形顶点 + 重心），本地坐标 */
@@ -283,6 +333,12 @@ function localSamples(geo: BufferGeometry) {
     const b = idx ? idx.getX(i + 1) : i + 1
     const d = idx ? idx.getX(i + 2) : i + 2
     out.push([pa.getX(a), pa.getY(a), pa.getZ(a)], [pa.getX(b), pa.getY(b), pa.getZ(b)], [pa.getX(d), pa.getY(d), pa.getZ(d)])
+    // 三边中点 + 重心：小果曲率大，光靠三个角会漏进去
+    out.push(
+      [(pa.getX(a) + pa.getX(b)) / 2, (pa.getY(a) + pa.getY(b)) / 2, (pa.getZ(a) + pa.getZ(b)) / 2],
+      [(pa.getX(b) + pa.getX(d)) / 2, (pa.getY(b) + pa.getY(d)) / 2, (pa.getZ(b) + pa.getZ(d)) / 2],
+      [(pa.getX(d) + pa.getX(a)) / 2, (pa.getY(d) + pa.getY(a)) / 2, (pa.getZ(d) + pa.getZ(a)) / 2],
+    )
     out.push([
       (pa.getX(a) + pa.getX(b) + pa.getX(d)) / 3,
       (pa.getY(a) + pa.getY(b) + pa.getY(d)) / 3,
