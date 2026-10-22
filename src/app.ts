@@ -3,6 +3,16 @@ import { Sound } from './audio/sound'
 import { Director } from './director'
 import { Post, type PostParams } from './gfx/post'
 import { LINES } from './lines'
+
+// ?look=1|2 三档调子（0 或不给是原来的样子）。只动后处理的调色，不碰灯光、材质和构图，
+// 所以三档之间可以来回对着看，选定一档再写死。
+// 变化的方向：暗部压得更实（lift↓）、高光多溢一点（bloom↑）、暗角略重、饱和略收
+const LOOKS = [
+  { lift: 1, bloom: 1, exposure: 1, sat: 1.07, vignette: 0.34 },
+  { lift: 0.62, bloom: 1.2, exposure: 1.02, sat: 0.99, vignette: 0.4 },
+  { lift: 0.45, bloom: 1.5, exposure: 1.05, sat: 0.93, vignette: 0.46 },
+] as const
+let LOOK: (typeof LOOKS)[number] = LOOKS[0]
 import type { LineDef } from './lines/types'
 import { installShot } from './shot'
 import { UI, type UIHost } from './ui/ui'
@@ -72,6 +82,7 @@ export class App implements UIHost {
       fade: 0,
       fadeColor: new Color('#F2E9D8'),
     }
+    LOOK = LOOKS[Math.min(2, Math.max(0, Math.round(Number(q.get('look') ?? 0)) || 0))]
     const cards = chooser ? LINES.map((l) => ({ line: l, dur: l.ready ? l.acts(this.director.stage).reduce((a, b) => a + b.dur, 0) : 0 })) : null
     this.ui = new UI(document.getElementById('ui')!, this, q.has('debug'), this.director.story, cards)
     if (q.has('t')) this.T = clamp(Number(q.get('t')), 0, DURATION)
@@ -211,9 +222,11 @@ export class App implements UIHost {
     p.aperture = f.post.aperture * 0.8
     p.maxCoc = f.post.maxCoc
     p.fade = f.post.fade
-    p.bloom = f.post.bloom ?? 0.22
-    p.exposure = L.exposure
-    p.lift = L.lift * 0.7
+    p.bloom = (f.post.bloom ?? 0.22) * LOOK.bloom
+    p.exposure = L.exposure * LOOK.exposure
+    p.lift = L.lift * 0.7 * LOOK.lift
+    p.sat = LOOK.sat
+    p.vignette = LOOK.vignette
     p.warm.copy(L.warm)
     if (f.post.haze) p.haze.copy(f.post.haze)
     if (f.post.hazeR) p.hazeR.copy(f.post.hazeR)
