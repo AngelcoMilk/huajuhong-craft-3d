@@ -8,9 +8,9 @@ import { LINES } from './lines'
 // 所以三档之间可以来回对着看，选定一档再写死。
 // 变化的方向：暗部压得更实（lift↓）、高光多溢一点（bloom↑）、暗角略重、饱和略收
 const LOOKS = [
-  { lift: 1, bloom: 1, exposure: 1, sat: 1.07, vignette: 0.34 },
-  { lift: 0.62, bloom: 1.2, exposure: 1.02, sat: 0.99, vignette: 0.4 },
-  { lift: 0.45, bloom: 1.5, exposure: 1.05, sat: 0.93, vignette: 0.46 },
+  { lift: 1, bloom: 1, exposure: 1.12, sat: 1.07, vignette: 0.34 },
+  { lift: 0.62, bloom: 1.2, exposure: 1.14, sat: 0.99, vignette: 0.4 },
+  { lift: 0.45, bloom: 1.5, exposure: 1.18, sat: 0.93, vignette: 0.46 },
 ] as const
 let LOOK: (typeof LOOKS)[number] = LOOKS[0]
 import type { LineDef } from './lines/types'

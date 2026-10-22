@@ -90,7 +90,7 @@ export const LIGHTS = {
   // 清早：太阳低，从右前方来，金黄
   morning: L({
     sun: [0.72, 0.36, 0.5], sunColor: '#FFD9AE', sunI: 3.4,
-    zenith: '#7FA6D2', horizon: '#F3DDC2', ground: '#B9A894',
+    zenith: '#5E9AD8', horizon: '#FBE7CE', ground: '#B9A894',
     hemiSky: '#B8C8E2', hemiGround: '#8A7A88', hemiI: 0.85, envI: 0.55,
     fog: '#E8DCCB', fogD: 0.00032, cloud: 0.42, cloudLit: '#FFF1DE', cloudShade: '#B9AFC2',
     exposure: 0.86, warm: '#FFF0D8', lift: 0.12,
@@ -98,21 +98,21 @@ export const LIGHTS = {
   // 上午：亮一些，太阳高起来
   forenoon: L({
     sun: [0.5, 0.62, 0.6], sunColor: '#FFE8C8', sunI: 3.7,
-    zenith: '#6E9ED3', horizon: '#E4EAEA', ground: '#B4A795',
+    zenith: '#4F91D6', horizon: '#EFF3F2', ground: '#B4A795',
     hemiSky: '#BCD0EA', hemiGround: '#8E7F8A', hemiI: 0.8, envI: 0.55,
     fog: '#E2E1DA', fogD: 0.00028, cloud: 0.4, cloudLit: '#FFFFFF', cloudShade: '#B8B6C8',
     exposure: 0.83, warm: '#FFF3E2', lift: 0.1,
   }),
   noon: L({
     sun: [0.12, 0.93, 0.34], sunColor: '#FFF2DE', sunI: 3.9,
-    zenith: '#6699D0', horizon: '#E1E8EC', ground: '#B6AA98',
+    zenith: '#4A8CD4', horizon: '#EBF1F4', ground: '#B6AA98',
     hemiSky: '#C0D3EC', hemiGround: '#8F808C', hemiI: 0.78, envI: 0.55,
     fog: '#E0E3E2', fogD: 0.00026, cloud: 0.38, cloudLit: '#FFFFFF', cloudShade: '#BCBACB',
     exposure: 0.80, warm: '#FFF4E6', lift: 0.1,
   }),
   afternoon: L({
     sun: [-0.56, 0.52, 0.6], sunColor: '#FFE1B8', sunI: 3.6,
-    zenith: '#6F9CCF', horizon: '#EEDFCB', ground: '#B7A693',
+    zenith: '#5791D2', horizon: '#F8E8D2', ground: '#B7A693',
     hemiSky: '#BCCBE4', hemiGround: '#8C7B88', hemiI: 0.8, envI: 0.55,
     fog: '#E6DCCD', fogD: 0.0003, cloud: 0.42, cloudLit: '#FFF4E4', cloudShade: '#BBB2C6',
     exposure: 0.83, warm: '#FFEFD6', lift: 0.11,
