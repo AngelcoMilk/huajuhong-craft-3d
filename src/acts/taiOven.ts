@@ -14,6 +14,11 @@ import { Act } from './act'
 const v = (x: number, y: number, z: number) => new Vector3(x, y, z)
 /** 翻的时刻：每个果绕自己果蒂那条轴滚四分之一圈（果蒂一直朝旁边，不扎进竹筛） */
 const TURNS = [17.2, 33.4]
+
+// 声音该响的时刻：数字只写在这里，声音只引用名字。翻/滚的时刻已经由 TURNS 给出。
+const AT = {
+  hiss: 0.6, // 刚摆进焙炉，湿热的一激
+} as const
 /** 两夜：夜里多亮（0～1） */
 const NIGHTS: [number, number][] = [
   [13.2, 21.6],
@@ -86,7 +91,7 @@ export class TaiOven extends Act {
 
   sounds(add: AddSound) {
     const at = v(LAYOUT.oven.x, LAYOUT.ovenTop, LAYOUT.oven.z)
-    add(0.6, 'hiss', { dur: 5, gain: 0.45, at })
+    add(AT.hiss, 'hiss', { dur: 5, gain: 0.45, at })
     for (const a of TURNS) {
       add(a, 'rustle', { dur: 1.3, gain: 0.55, pitch: 0.7, at })
       for (let k = 0; k < 6; k++) add(a + 0.9 + k * 0.06, 'tap', { gain: 0.14, pitch: 0.7, at })

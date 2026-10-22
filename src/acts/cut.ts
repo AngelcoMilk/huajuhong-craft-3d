@@ -17,6 +17,17 @@ const AC = PEEL.ALPHA_C
 const SHAVING_HOLD = 1.6
 const SHAVING_FADE = 2.4
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。
+// 割皮、刮瓤那些成批的时刻已经由 cutWindow / scrapeStart 算出来，不在这张表里。
+const AT = {
+  open: 16.2, // 掰开
+  knifeBack: 16.76, // 刀放回刀架
+  pulpOut: 18.2, // 掏瓤
+  pulpRustle: 20.4, // 摊平那几下
+  pulpBowl: 20.78, // 瓤落进碗里
+  scraperBack: 37.36, // 刮刀放回
+} as const
+
 export class Cut extends Act {
   /** 割皮时，第 k 道口转到刀这一边：刀固定在 phiK 方位 */
   private readonly phiK = 0.5
@@ -91,12 +102,12 @@ export class Cut extends Act {
       const w = this.cutWindow(k)
       add(w.sliceA, 'slice', { dur: w.sliceB - w.sliceA, gain: 0.75, pitch: 0.95 + 0.04 * ((k * 3) % 4) })
     }
-    add(16.76, 'tap', { gain: 0.3, pitch: 1.4, at: L.knifeRest })
+    add(AT.knifeBack, 'tap', { gain: 0.3, pitch: 1.4, at: L.knifeRest })
     // 掰开、掏瓤、摊平
-    add(16.2, 'rustle', { dur: 1.6, gain: 0.25, pitch: 0.6 })
-    add(18.2, 'squish', { gain: 0.65 })
-    add(20.78, 'bowl', { gain: 0.55, at: L.bowl })
-    add(20.4, 'rustle', { dur: 1.8, gain: 0.18, pitch: 0.55 })
+    add(AT.open, 'rustle', { dur: 1.6, gain: 0.25, pitch: 0.6 })
+    add(AT.pulpOut, 'squish', { gain: 0.65 })
+    add(AT.pulpBowl, 'bowl', { gain: 0.55, at: L.bowl })
+    add(AT.pulpRustle, 'rustle', { dur: 1.8, gain: 0.18, pitch: 0.55 })
     // 一瓣一瓣刮，刮下来的屑落在砧板上，最后刮中间
     for (let k = 0; k < this.n; k++) {
       const s0 = this.scrapeStart(k)
@@ -104,7 +115,7 @@ export class Cut extends Act {
       for (let j = 0; j < 4; j++) add(s0 + ((j + 0.5) / 4) * 1.25 + 0.55, 'tap', { gain: 0.1, pitch: 1.6 })
     }
     add(this.hubAt, 'scrape', { dur: 1.0, gain: 0.55, pitch: 0.85 })
-    add(37.36, 'tap', { gain: 0.3, pitch: 1.3, at: L.scraperRest })
+    add(AT.scraperBack, 'tap', { gain: 0.3, pitch: 1.3, at: L.scraperRest })
   }
 
   /** 主角在砧板上：每割完一道转一下，刮好以后慢慢转一点给人看 */

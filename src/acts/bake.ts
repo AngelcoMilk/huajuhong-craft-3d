@@ -16,6 +16,15 @@ const UP = new Vector3(0, 1, 0)
 const XAX = new Vector3(1, 0, 0)
 const ZAX = new Vector3(0, 0, 1)
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。
+// 括号里是它对应的画面动作 —— 改动画节奏时一起改这张表。
+const AT = {
+  hiss: 0.8, // 刚放上焙炉，湿热的一激
+  flipA: 9.15, // 第一次翻面（pose 里 seg(9.0, 10.6)）
+  flipALand: 10.55, // 翻完落回原来那一格
+  lift: 18.05, // 拿起来给人看（pose 里 seg(18, 19.8)）
+} as const
+
 export class Bake extends Act {
   private q = new Quaternion()
 
@@ -57,10 +66,10 @@ export class Bake extends Act {
   sounds(add: AddSound) {
     const L = LAYOUT
     const at = v(L.oven.x + this.slots[0].x, L.ovenTop, L.oven.z + this.slots[0].z)
-    add(0.8, 'hiss', { dur: 5, gain: 0.55, at })
-    add(9.15, 'flip', { gain: 0.45, at })
-    add(10.55, 'tap', { gain: 0.35, pitch: 0.75, at })
-    add(18.05, 'flip', { gain: 0.3, at })
+    add(AT.hiss, 'hiss', { dur: 5, gain: 0.55, at })
+    add(AT.flipA, 'flip', { gain: 0.45, at })
+    add(AT.flipALand, 'tap', { gain: 0.35, pitch: 0.75, at })
+    add(AT.lift, 'flip', { gain: 0.3, at })
   }
 
   pose(t: number) {

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && node scripts/check-audio-times.mjs && vite build",
+    "check:audio": "node scripts/check-audio-times.mjs",
     "preview": "vite preview",
     "fonts": "node scripts/subset-fonts.mjs"
   },

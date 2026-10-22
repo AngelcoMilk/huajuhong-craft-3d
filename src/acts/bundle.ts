@@ -11,6 +11,12 @@ import { Act } from './act'
 
 const v = (x: number, y: number, z: number) => new Vector3(x, y, z)
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。
+const AT = {
+  heroLand: 5.27, // 主角那片落上码好的九片（pose 里 seg(4.5, 5.3)）
+  bulb: 11.2, // 天黑了，檐下拉亮电灯
+} as const
+
 export class Bundle extends Act {
   constructor(s: Stage, id = 'bundle') {
     super(s, id, 30)
@@ -42,14 +48,14 @@ export class Bundle extends Act {
     const at = v(L.tray.x, L.tableTop + 2, L.tray.z)
     // 九片一片片落下码齐，主角放在最上面
     for (let i = 0; i < 9; i++) add(0.6 + (i + 1) * 0.42 - 0.03, 'tap', { gain: 0.3, pitch: 0.7 + 0.03 * i, at })
-    add(5.27, 'tap', { gain: 0.35, pitch: 0.75, at })
+    add(AT.heroLand, 'tap', { gain: 0.35, pitch: 0.75, at })
     // 一圈一圈绕绳，最后勒紧打结（绕绳 5.8～11 秒，前 84% 是四圈，后面打结）
     const n = this.s.w.bundle.loops.length
     for (let i = 0; i < n; i++) add(5.8 + (5.2 * 0.84 * i) / n + 0.05, 'rope', { dur: ((5.2 * 0.84) / n) * 0.9, gain: 0.6, at })
     add(5.8 + 5.2 * 0.86, 'cinch', { gain: 0.6, at })
     add(5.8 + 5.2 * 0.96, 'cinch', { gain: 0.45, at })
     // 天黑了，檐下拉亮电灯
-    add(11.2, 'click', { gain: 0.5, at: L.bulb })
+    add(AT.bulb, 'click', { gain: 0.5, at: L.bulb })
   }
 
   pose(t: number) {

@@ -15,6 +15,14 @@ import { placePress, pressSounds, type PressCue } from './press'
 const v = (x: number, y: number, z: number) => new Vector3(x, y, z)
 const UP = new Vector3(0, 1, 0)
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。
+const AT = {
+  turnOver: 9.6, // 整片翻过来
+  tipFold: 9.7, // 五爪先折瓣尖（只有五爪走这条路）
+  foldIn: 10.4, // 对折压下去
+  toPress: 14.35, // 搬到压板上
+} as const
+
 export class Fold extends Act {
   /** 五爪先折瓣尖再对折：折瓣尖的时候推近看 */
   private tips: boolean
@@ -73,10 +81,10 @@ export class Fold extends Act {
     // 三把水洒在竹匾上
     for (let b = 0; b < 3; b++) add(1.8 + b * 1.15 + 0.35, 'sprinkle', { gain: 0.65, at: rack })
     // 折：五爪先折瓣尖，再整片翻过来对折
-    if (this.tips) add(9.7, 'crinkle', { dur: 0.6, gain: 0.22 })
-    add(9.6, 'flip', { gain: 0.45 })
-    add(10.4, 'rustle', { dur: 1.6, gain: 0.2, pitch: 0.6 })
-    add(14.35, 'tap', { gain: 0.3, pitch: 0.7, at: v(L.press.x, L.press.y, L.press.z) })
+    if (this.tips) add(AT.tipFold, 'crinkle', { dur: 0.6, gain: 0.22 })
+    add(AT.turnOver, 'flip', { gain: 0.45 })
+    add(AT.foldIn, 'rustle', { dur: 1.6, gain: 0.2, pitch: 0.6 })
+    add(AT.toPress, 'tap', { gain: 0.3, pitch: 0.7, at: v(L.press.x, L.press.y, L.press.z) })
     pressSounds(add, this.press)
   }
 

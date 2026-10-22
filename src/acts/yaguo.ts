@@ -18,6 +18,21 @@ const UP = new Vector3(0, 1, 0)
 const XAX = new Vector3(1, 0, 0)
 const ZAX = new Vector3(0, 0, 1)
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。这个文件里有四段，各自一张表。
+const AT_PRESS = {
+  flat: 5.05, // 整果压扁
+  flipDown: 20.7, // 半夜掀开，一个个翻面落回板上
+} as const
+const AT_OVEN = {
+  hiss: 0.5, // 刚摆进焙炉，湿热的一激
+} as const
+const AT_CUTTER = {
+  setBase: 2.58, // 木座摆到压板底板上
+} as const
+const AT_BULB = {
+  on: 14, // 拉亮电灯
+} as const
+
 /** 十个压果在压板底板上的位置：后排四个、中间三个、前排三个，错开一点；0 是主角（前排正中） */
 const PRESS_SLOTS: { x: number; z: number; yaw: number }[] = (() => {
   const r = rng(301)
@@ -141,8 +156,8 @@ export class PressCakes extends Act {
     if (!this.night) return
     const at = v(L.press.x, L.press.y + 3, L.press.z)
     // 整果压扁；半夜掀开一个个翻面，落回板上
-    add(5.05, 'squish', { dur: 1.5, gain: 0.4, at })
-    add(20.7, 'squish', { dur: 0.8, gain: 0.18, at })
+    add(AT_PRESS.flat, 'squish', { dur: 1.5, gain: 0.4, at })
+    add(AT_PRESS.flipDown, 'squish', { dur: 0.8, gain: 0.18, at })
     for (let i = 0; i < 10; i++) add(17.6 + i * 0.12 - 0.02, 'thud', { gain: 0.28, pitch: 1.1, at })
   }
 
@@ -209,7 +224,7 @@ export class CakeOven extends Act {
   sounds(add: AddSound) {
     const L = LAYOUT
     const at = v(L.oven.x, L.ovenTop, L.oven.z)
-    add(0.5, 'hiss', { dur: 5, gain: 0.45, at })
+    add(AT_OVEN.hiss, 'hiss', { dur: 5, gain: 0.45, at })
     for (let i = 0; i < 10; i++) add(13.2 + i * 0.1 - 0.02, 'tap', { gain: 0.28, pitch: 0.7, at })
   }
 
@@ -491,7 +506,7 @@ export class Slice extends Act {
   sounds(add: AddSound) {
     const b = this.base()
     const at = v(b.x + 4, b.y, b.z)
-    add(2.58, 'knock', { gain: 0.3, pitch: 1.6, at })
+    add(AT_CUTTER.setBase, 'knock', { gain: 0.3, pitch: 1.6, at })
     // 每一刀：刀压到底那一下脆响，切下来的片翻倒落在刀前
     for (let i = 0; i < this.total; i++) {
       const live = i < LIVE
@@ -716,7 +731,7 @@ export class Winnowed extends Act {
   }
 
   sounds(add: AddSound) {
-    add(14, 'click', { gain: 0.5, at: LAYOUT.bulb })
+    add(AT_BULB.on, 'click', { gain: 0.5, at: LAYOUT.bulb })
   }
 
   carry(t: number) {

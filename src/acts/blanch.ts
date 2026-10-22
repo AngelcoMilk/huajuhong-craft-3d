@@ -26,6 +26,13 @@ const BASKET_FLOOR = LAYOUT.basketFloor // 篮子放在灶前地上
 /** 笊篱放在灶面上时柄朝哪（朝灶前伸出去，不在焙炉上方） */
 export const STRAINER_REST_YAW = -Math.PI / 2 + 0.25
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。
+const AT = {
+  tilt: 8.25, // 篮子倾到锅上方，果开始往下滚（第一个果在 POUR_AT）
+  basketDown: 10.76, // 篮子放回灶前地上
+  basketTap: 10.78, // 篮底磕到地面
+} as const
+
 export class Blanch extends Act {
   private sp = new Vector3()
   private sq = new Quaternion()
@@ -68,7 +75,7 @@ export class Blanch extends Act {
     const lay = this.s.layout
     // 篮子拎起来，倾过去，果在篮里滚出来，一个个扑通落进滚水
     add(LIFT_AT, 'rustle', { dur: 0.7, gain: 0.4, at: BASKET_FLOOR })
-    add(8.25, 'rustle', { dur: 0.8, gain: 0.45, pitch: 0.85, at: wok })
+    add(AT.tilt, 'rustle', { dur: 0.8, gain: 0.45, pitch: 0.85, at: wok })
     // 叶子也被倒出去：每片脱离的精确时刻由叶子自己按种子抖，这里按这条线实际片数错开近似排；
     // 比上面那声果滚落更脆、更轻（叶尖擦过篮口的一下）
     const leafN = this.s.w.leaves.count
@@ -80,8 +87,8 @@ export class Blanch extends Act {
         at: BASKET_FLOOR,
       })
     lay.pour.forEach((_, j) => add(POUR_AT + j * POUR_GAP + FALL - 0.01, 'plop', { gain: 0.5 - 0.12 * (j % 3), pitch: 0.9 + 0.05 * ((j * 7) % 5), at: wok }))
-    add(10.76, 'thud', { gain: 0.4, pitch: 0.8, at: BASKET_FLOOR })
-    add(10.78, 'tap', { gain: 0.25, pitch: 0.75, at: BASKET_FLOOR })
+    add(AT.basketDown, 'thud', { gain: 0.4, pitch: 0.8, at: BASKET_FLOOR })
+    add(AT.basketTap, 'tap', { gain: 0.25, pitch: 0.75, at: BASKET_FLOOR })
     // 一勺：笊篱伸进水里、捞起来沥水、倒在焙炉竹筛上
     lay.scoops.forEach((sc, k) => {
       const a = SCOOP0 + k * SCOOP_LEN

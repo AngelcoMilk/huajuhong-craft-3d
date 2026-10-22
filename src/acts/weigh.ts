@@ -19,6 +19,11 @@ const SLIDE0 = 2.9 // 开始挪秤砣
 const OUT0 = 6.6 // 拿出来放回篮里
 const OUT1 = 7.7
 
+// 声音该响的时刻：数字只写在这里，声音只引用名字。
+const AT = {
+  slideBack: 4.02, // 秤砣挪过头，再退回来
+} as const
+
 export class Weigh extends Act {
   /** 秤杆的角度、角速度，按时间从头算一遍（每帧都从 0 算到 t，固定步长，所以拖进度也一样） */
   private sim: { t: number; a: number }[] = []
@@ -96,7 +101,7 @@ export class Weigh extends Act {
     add(LAND, 'tap', { gain: 0.22, pitch: 0.7, at: pan })
     // 秤砣的绳顺着秤杆挪过去，挪过头再退回来
     add(SLIDE0, 'slide', { dur: 1.1, gain: 0.6, at: pan })
-    add(4.02, 'slide', { dur: 0.6, gain: 0.4, pitch: 0.95, at: pan })
+    add(AT.slideBack, 'slide', { dur: 0.6, gain: 0.4, pitch: 0.95, at: pan })
     add(OUT0, 'rustle', { dur: 0.3, gain: 0.25, at: pan })
     add(OUT1 - 0.02, 'thud', { gain: 0.55, pitch: 0.9, at: basket })
     add(OUT1, 'rustle', { dur: 0.35, gain: 0.3, at: basket })
