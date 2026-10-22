@@ -83,26 +83,39 @@ export function brickMat(o: { plasterTop?: boolean; soot?: Vector4; brick?: stri
         vec2 f = fract(b);
         vec2 mw = vec2(0.55 / 24.0, 0.55 / 6.4);
         float inside = smoothstep(0.0, mw.x, f.x) * smoothstep(0.0, mw.x, 1.0 - f.x) * smoothstep(0.0, mw.y, f.y) * smoothstep(0.0, mw.y, 1.0 - f.y);
-        // 砖缝只有半厘米宽：一个像素比砖缝还宽的时候（远看）砖缝淡成平均色，不然一闪一闪
+        // 砖缝只有半厘米宽：一个像素比砖缝还宽的时候（远看）砖缝淡成平均色，不然一闪一闪。
+        // 但淡下去不等于消失——留 20% 的暗线，远看才有一张砖墙的网，不然整面就是一块平色
         vec2 uvw = fwidth(uv);
         float maa = 1.0 - smoothstep(0.25, 0.7, max(uvw.x, uvw.y));
-        float mortar = mix(0.12, 1.0 - inside, maa);
+        float mortar = mix(0.20, 1.0 - inside, maa);
         float h = hash12(cell);
         float tex = snoise(vec3(uv * 0.45, h * 10.0)) * 0.5 + 0.5;
-        vec3 bc = uBrick * (0.78 + 0.34 * h) * (0.9 + 0.18 * tex);
-        bc = mix(bc, uBrick2, step(0.82, hash12(cell + 3.1)) * 0.7);
-        vec3 col = mix(bc, uMortar * (0.9 + 0.1 * tex), mortar);
-        float wash = uWash * smoothstep(0.35, 0.65, fbm3(vWPos * 0.02) * 0.5 + 0.5 + uWash * 0.3);
-        col = mix(col, uPlaster * (0.9 + 0.1 * tex), wash);
-        procBump = (-mortar * 0.35 * maa + tex * 0.06) * (1.0 - wash);
+        // 一块砖一个深浅（0.70~1.30）：远处砖缝糊掉以后，墙面的层次全靠这个
+        vec3 bc = uBrick * (0.70 + 0.60 * h) * (0.9 + 0.18 * tex);
+        bc = mix(bc, uBrick2, step(0.72, hash12(cell + 3.1)) * 0.75);
+        // 缝在远处当暗线（凹进去的阴影），走近了才看见灰浆本色
+        vec3 mc = uMortar * (0.9 + 0.1 * tex);
+        mc = mix(mc * 0.62, mc, maa);
+        vec3 col = mix(bc, mc, mortar);
+        // 白灰：整面薄薄刷一层，再按"这块砖新不新"整块剥落，缝里先露砖。
+        // 不用原来那种半米大的随机斑——那看着就是一块白一块砖，不均匀
+        float peel = hash12(cell + 5.3);
+        float nz = fbm3(vWPos * 0.11) * 0.5 + 0.5;
+        float wash = uWash * clamp(1.15 - peel * 0.60 - (1.0 - inside) * 0.30 + nz * 0.22, 0.0, 1.0);
+        col = mix(col, uPlaster * (0.88 + 0.14 * nz), wash);
+        // 墙根：地面积灰、溅水，越靠下越暗，墙才有"落地"的重量
+        if (uTop < 0.5) col *= mix(0.74, 1.0, smoothstep(0.0, 70.0, vWPos.y));
+        procBump = (-mortar * 0.38 * maa + tex * 0.09) * (1.0 - wash);
         if (uTop > 0.5 && vWNrm.y > 0.5) {
           float pn = fbm3(vWPos * 0.06) * 0.5 + 0.5;
-          col = uPlaster * (0.82 + 0.18 * pn);
+          col = uPlaster * (0.80 + 0.20 * pn);
           procBump = pn * 0.05;
         }
         float sd = length(vWPos - uSoot.xyz) / uSoot.w;
         float soot = (1.0 - smoothstep(0.2, 1.0, sd + snoise(vPos * 0.08) * 0.2));
         col = mix(col, vec3(0.06, 0.05, 0.05), soot * 0.88);
+        // 天光偏蓝，会把砖的暖调冲淡：整体往暖里推一点点，白天不至于发灰
+        col *= vec3(1.035, 1.0, 0.955);
         diffuseColor.rgb = col;
       `,
       bump: true,
@@ -119,7 +132,7 @@ export function plasterMat(o: { color?: string; damp?: string; dampH?: number } 
         vec3 p = vWPos;
         float n = fbm3(p * 0.01);
         float n2 = fbm3(p * 0.07) * 0.5 + 0.5;
-        vec3 col = uPlaster * (0.9 + 0.1 * n2);
+        vec3 col = uPlaster * (0.86 + 0.18 * n2);
         float streak = smoothstep(0.15, 0.7, fbm3(vec3(p.x * 0.035, p.y * 0.004, p.z * 0.035)));
         col = mix(col, col * vec3(0.86, 0.83, 0.79), streak * 0.55);
         float patchy = smoothstep(0.35, 0.6, fbm3(p * 0.006 + 2.0));

@@ -300,6 +300,11 @@ const finalMat = new ShaderMaterial({
 /**
  * 屏幕空间环境光遮蔽：把角落、接缝、贴着桌面的地方压暗。
  * 只用深度图，不需要额外渲染一遍几何；半分辨率算，够用。
+ *
+ * 三个关键点（少一个就会出问题）：
+ *   1. 法线从深度的两个偏导叉乘重建——没有法线就分不清"同一块平面的邻居"和"墙角"
+ *   2. 半球判据：只有落在本点法线正方向的邻居才算挡住它。少了这条，斜着的平面会自己挡自己
+ *   3. 半径是世界空间的（厘米），再按当前像素深度投影成屏幕像素数——固定像素偏移在远近处尺度完全不同
  */
 const SSAO_MAT = new ShaderMaterial({
   uniforms: {
@@ -308,16 +313,17 @@ const SSAO_MAT = new ShaderMaterial({
     uProjInv: { value: new Matrix4() },
     uTexel: { value: new Vector2() },
     uRes: { value: new Vector2() },
-    uRadius: { value: 34 },
+    uRadius: { value: 45 },
+    uBias: { value: 0.06 },
     uNear: { value: 1 },
     uFar: { value: 1000 },
   },
   vertexShader: VERT,
   fragmentShader: /* glsl */ `
     uniform sampler2D tDepth;
-    uniform mat4 uProjInv;
+    uniform mat4 uProj, uProjInv;
     uniform vec2 uTexel, uRes;
-    uniform float uRadius;
+    uniform float uRadius, uBias;
     varying vec2 vUv;
     ${DEPTH_FN}
 
@@ -335,22 +341,37 @@ const SSAO_MAT = new ShaderMaterial({
       // 天空不做
       if (d >= 0.9999) { gl_FragColor = vec4(1.0); return; }
       vec3 p = viewPos(vUv);
-      // 八个方向、两圈半径：看周围有没有比本点更靠近相机的几何挡着它。
-      // 方向用三角函数现算而不是查表——GLSL1 不允许拿循环变量去索引 uniform 数组。
+      // 法线：中心差分叉乘。uv 向右/向上各走一格，叉出来就是朝相机的法线
+      vec3 qx = viewPos(vUv + vec2(uTexel.x, 0.0));
+      vec3 qy = viewPos(vUv + vec2(0.0, uTexel.y));
+      vec3 nrm = normalize(cross(qx - p, qy - p));
+      if (nrm.z < 0.0) nrm = -nrm;
+      // 轮廓边上（前后两层几何叠在同一个像素左右）重建出来的法线是噪声，退回"正对相机"那条
+      float dz = max(abs(qx.z - p.z), abs(qy.z - p.z));
+      if (dz > 0.06 * max(abs(p.z), 1.0)) nrm = vec3(0.0, 0.0, 1.0);
+
+      // 45 厘米的半径投影到屏幕上会有多少像素：远处小、近处大
+      float tanHalf = 1.0 / max(uProj[1][1], 1e-6);
+      float pxPerCm = 0.5 * uRes.y / (max(abs(p.z), 1.0) * tanHalf);
+      float rpx = clamp(uRadius * pxPerCm, 3.0, 64.0);
+
       float rot = hash12(floor(vUv * uRes)) * 6.2831853;
       float occ = 0.0;
       float tot = 0.0;
       for (int i = 0; i < 8; i++) {
         float a = float(i) * 0.785398 + rot;
         for (int k = 1; k <= 2; k++) {
-          vec2 o = vec2(cos(a), sin(a)) * uTexel * (float(k) * 6.0);
-          float dz = p.z - viewPos(vUv + o).z;
-          float w = 1.0 - (float(k) - 1.0) * 0.45;
-          occ += smoothstep(0.0, uRadius, dz) * w;
-          tot += w;
+          vec2 o = vec2(cos(a), sin(a)) * uTexel * (rpx * float(k) * 0.55);
+          vec3 dv = viewPos(vUv + o) - p;
+          float len = length(dv);
+          // 邻居必须在本点法线的正方向（半球内）才算挡住；再按距离衰减
+          float ndl = dot(nrm, dv / max(len, 1e-5)) - uBias;
+          float fall = 1.0 - smoothstep(0.45 * uRadius, uRadius, len);
+          occ += clamp(ndl, 0.0, 1.0) * fall;
+          tot += 1.0;
         }
       }
-      float ao = 1.0 - clamp(occ / tot, 0.0, 1.0) * 1.5;
+      float ao = 1.0 - clamp(occ / max(tot, 1.0), 0.0, 1.0) * 1.8;
       gl_FragColor = vec4(vec3(clamp(ao, 0.0, 1.0)), 1.0);
     }
   `,
@@ -358,7 +379,7 @@ const SSAO_MAT = new ShaderMaterial({
   depthWrite: false,
 })
 
-/** 把 SSAO 的噪点糊掉（半分辨率上 3x3 就够） */
+/** 把 SSAO 的噪点糊掉（半分辨率上 5x5） */
 const AO_BLUR_MAT = new ShaderMaterial({
   uniforms: { tAO: { value: null }, uTexel: { value: new Vector2() } },
   vertexShader: VERT,
@@ -368,10 +389,14 @@ const AO_BLUR_MAT = new ShaderMaterial({
     varying vec2 vUv;
     void main() {
       float s = 0.0;
-      for (int y = -1; y <= 1; y++)
-        for (int x = -1; x <= 1; x++)
-          s += texture2D(tAO, vUv + vec2(float(x), float(y)) * uTexel).r;
-      gl_FragColor = vec4(vec3(s / 9.0), 1.0);
+      float w = 0.0;
+      for (int y = -2; y <= 2; y++)
+        for (int x = -2; x <= 2; x++) {
+          float k = 3.0 - abs(float(x)) - abs(float(y));
+          s += texture2D(tAO, vUv + vec2(float(x), float(y)) * uTexel).r * k;
+          w += k;
+        }
+      gl_FragColor = vec4(vec3(s / w), 1.0);
     }
   `,
   depthTest: false,
