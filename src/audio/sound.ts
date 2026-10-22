@@ -52,9 +52,9 @@ const SPOT = {
   tree: v3(-322, 318, 52),
 }
 
-/** 底噪总闸 + 各层微调：?audio=bed=1,wind=0.7,fire=0.8,yard=0.6,hearth=0.8,sfx=0（不给都是 1，bed 是 0.7） */
+/** 底噪总闸 + 各层微调：?audio=bed=1,wind=0.7,fire=0.8,yard=0.6,hearth=0.8,reverb=0.5,sfx=0 */
 function readAudioMix() {
-  const mix = { bed: 0.7, wind: 1, fire: 1, sfx: 1, yard: 1, hearth: 1 }
+  const mix = { bed: 0.7, wind: 1, fire: 1, sfx: 1, yard: 1, hearth: 1, reverb: 1 }
   try {
     const q = new URLSearchParams(location.search).get('audio')
     if (q) {
@@ -194,7 +194,7 @@ export class Sound {
     this.amb.connect(this.bus)
     // 院子的一点堂响：卷积混响，脉冲响应由代码合成（不用素材文件）
     const wet = ctx.createGain()
-    wet.gain.value = 0.1
+    wet.gain.value = 0.1 * this.mix.reverb
     const conv = ctx.createConvolver()
     conv.buffer = this.impulse(ctx, 0.85)
     this.bus.connect(conv).connect(wet).connect(this.master)
